@@ -182,6 +182,32 @@ export const CommentSchema = z.object({
 });
 export type Comment = z.infer<typeof CommentSchema>;
 
+// Notification type enum
+export const NotificationTypeSchema = z.enum([
+  "moveCard",
+  "commentCard",
+  "addMemberToCard",
+  "mentionInComment",
+]);
+export type NotificationType = z.infer<typeof NotificationTypeSchema>;
+
+// Notification schema
+export const NotificationSchema = z.object({
+  id: z.string(),
+  userId: z.string(),
+  creatorUserId: z.string().nullable().optional(),
+  boardId: z.string(),
+  cardId: z.string(),
+  commentId: z.string().nullable().optional(),
+  actionId: z.string().nullable().optional(),
+  type: NotificationTypeSchema,
+  data: z.record(z.unknown()),
+  isRead: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
+});
+export type Notification = z.infer<typeof NotificationSchema>;
+
 // Attachment schema
 export const AttachmentSchema = z.object({
   id: z.string(),
