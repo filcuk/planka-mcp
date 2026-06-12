@@ -14,7 +14,7 @@ The current kanban-mcp has accumulated patches for PLANKA 2.0 compatibility. A p
 - ~700 lines vs ~5000 lines (simpler, maintainable)
 - Type-safe with Zod schemas matching PLANKA's actual API
 - Optimized for agent workflows (combined operations, sensible defaults)
-- Well-documented for community release via gogogadgetbytes
+- Well-documented for community release via filcuk
 
 ### Target Version
 
@@ -132,13 +132,17 @@ import { z } from "zod";
 export const CardTypeSchema = z.enum(["project", "story"]);
 export type CardType = z.infer<typeof CardTypeSchema>;
 
-// Label colors - all 25 valid PLANKA colors
+// Label colors - matches Planka server/api/models/Label.js COLORS (42 colors)
 export const LabelColorSchema = z.enum([
-  "berry-red", "pumpkin-orange", "lagoon-blue", "pink-tulip", "light-mud",
-  "orange-peel", "bright-moss", "antique-blue", "dark-granite", "lagune-blue",
-  "sunny-grass", "morning-sky", "light-orange", "midnight-blue", "tank-green",
-  "gun-metal", "wet-moss", "red-burgundy", "light-concrete", "apricot-red",
-  "desert-sand", "navy-blue", "egg-yellow", "coral-green", "light-cocoa"
+  "muddy-grey", "autumn-leafs", "morning-sky", "antique-blue", "egg-yellow",
+  "desert-sand", "dark-granite", "fresh-salad", "lagoon-blue", "midnight-blue",
+  "light-orange", "pumpkin-orange", "light-concrete", "sunny-grass", "navy-blue",
+  "lilac-eyes", "apricot-red", "orange-peel", "silver-glint", "bright-moss",
+  "deep-ocean", "summer-sky", "berry-red", "light-cocoa", "grey-stone",
+  "tank-green", "coral-green", "sugar-plum", "pink-tulip", "shady-rust",
+  "wet-rock", "wet-moss", "turquoise-sea", "lavender-fields", "piggy-red",
+  "light-mud", "gun-metal", "modern-green", "french-coast", "sweet-lilac",
+  "red-burgundy", "pirate-gold",
 ]);
 export type LabelColor = z.infer<typeof LabelColorSchema>;
 

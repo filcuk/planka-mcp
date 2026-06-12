@@ -2,7 +2,7 @@
  * Request body schemas for PLANKA API operations.
  */
 import { z } from "zod";
-import { CardTypeSchema, LabelColorSchema } from "./entities.js";
+import { CardTypeSchema, LabelColorSchema, ListTypeSchema } from "./entities.js";
 
 // Card requests
 export const CreateCardSchema = z.object({
@@ -104,6 +104,7 @@ export type UpdateCommentInput = z.input<typeof UpdateCommentSchema>;
 export const CreateListSchema = z.object({
   boardId: z.string(),
   name: z.string().min(1, "List name required"),
+  type: ListTypeSchema.optional().default("active"), // Required for PLANKA 2.0
   position: z.number().optional().default(65536),
 });
 export type CreateListInput = z.input<typeof CreateListSchema>;

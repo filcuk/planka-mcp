@@ -39,6 +39,12 @@ export const manageListsTool = {
         type: "number",
         description: "List position",
       },
+      type: {
+        type: "string",
+        enum: ["active", "closed", "archive", "trash"],
+        description:
+          "List type (defaults to active for normal kanban columns)",
+      },
     },
     required: ["action"],
   },
@@ -48,6 +54,7 @@ export const manageListsTool = {
     listId?: string;
     name?: string;
     position?: number;
+    type?: "active" | "closed" | "archive" | "trash";
   }) => {
     try {
       switch (params.action) {
@@ -78,6 +85,7 @@ export const manageListsTool = {
           const list = await createList({
             boardId: params.boardId,
             name: params.name,
+            type: params.type,
             position: params.position,
           });
 
@@ -91,6 +99,7 @@ export const manageListsTool = {
                     list: {
                       id: list.id,
                       name: list.name,
+                      type: list.type,
                       position: list.position,
                     },
                   },
@@ -131,6 +140,7 @@ export const manageListsTool = {
                     list: {
                       id: list.id,
                       name: list.name,
+                      type: list.type,
                       position: list.position,
                     },
                   },

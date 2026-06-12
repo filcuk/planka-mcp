@@ -2,6 +2,8 @@
 
 A Model Context Protocol (MCP) server for [PLANKA](https://planka.app) kanban boards, purpose-built for Claude and other AI agents.
 
+Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/planka-mcp).
+
 ## Features
 
 - Full PLANKA 2.0 API support
@@ -12,13 +14,13 @@ A Model Context Protocol (MCP) server for [PLANKA](https://planka.app) kanban bo
 ## Installation
 
 ```bash
-npm install @gogogadgetbytes/planka-mcp
+npm install @filcuk/planka-mcp
 ```
 
 Or run directly:
 
 ```bash
-npx @gogogadgetbytes/planka-mcp
+npx @filcuk/planka-mcp
 ```
 
 ## Configuration
@@ -40,7 +42,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
   "mcpServers": {
     "planka": {
       "command": "npx",
-      "args": ["@gogogadgetbytes/planka-mcp"],
+      "args": ["@filcuk/planka-mcp"],
       "env": {
         "PLANKA_BASE_URL": "https://planka.example.com",
         "PLANKA_AGENT_EMAIL": "agent@example.com",
@@ -60,7 +62,7 @@ Add to `~/.claude.json`:
   "mcpServers": {
     "planka": {
       "command": "npx",
-      "args": ["@gogogadgetbytes/planka-mcp"],
+      "args": ["@filcuk/planka-mcp"],
       "env": {
         "PLANKA_BASE_URL": "https://planka.example.com",
         "PLANKA_AGENT_EMAIL": "agent@example.com",
@@ -153,7 +155,7 @@ This server is designed for PLANKA 2.0 and handles the API differences from 1.x:
 
 ```bash
 # Clone
-git clone https://github.com/gogogadgetbytes/planka-mcp.git
+git clone https://github.com/filcuk/planka-mcp.git
 cd planka-mcp
 
 # Install
@@ -173,5 +175,6 @@ MIT
 ## Links
 
 - [PLANKA](https://planka.app) - The kanban board
+- [PLANKA Swagger](https://plankanban.github.io/planka/swagger-ui/swagger.json) - The kanban board
 - [MCP SDK](https://github.com/modelcontextprotocol/sdk) - Model Context Protocol
 - [Design Document](./DESIGN.md) - Technical design details

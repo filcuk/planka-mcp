@@ -21,6 +21,7 @@ export async function createList(input: CreateListInput): Promise<List> {
     `/api/boards/${validated.boardId}/lists`,
     {
       name: validated.name,
+      type: validated.type, // Required for PLANKA 2.0
       position: validated.position,
     }
   );

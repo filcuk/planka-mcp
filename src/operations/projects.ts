@@ -2,7 +2,7 @@
  * Project operations for PLANKA API.
  */
 import { plankaClient } from "../client.js";
-import { Project, Board, List } from "../schemas/entities.js";
+import { Project, Board, List, ListSchema } from "../schemas/entities.js";
 import { ProjectsResponse, ProjectsIncludedSchema } from "../schemas/responses.js";
 import { z } from "zod";
 
@@ -62,14 +62,7 @@ export async function getStructure(projectId?: string): Promise<ProjectStructure
         | Record<string, unknown>
         | undefined;
       const lists = included?.lists
-        ? z.array(z.object({
-            id: z.string(),
-            boardId: z.string(),
-            name: z.string().nullable(),
-            position: z.number().nullable(),
-            createdAt: z.string(),
-            updatedAt: z.string().nullable().optional(),
-          })).parse(included.lists)
+        ? z.array(ListSchema).parse(included.lists)
         : [];
 
       boardsWithLists.push({
