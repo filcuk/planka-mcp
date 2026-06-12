@@ -6,6 +6,7 @@ import { cardTools } from "./cards.js";
 import { taskTools } from "./tasks.js";
 import { labelTools } from "./labels.js";
 import { commentTools } from "./comments.js";
+import { notificationTools } from "./notifications.js";
 import { listTools } from "./lists.js";
 
 /**
@@ -17,6 +18,7 @@ export const allTools = [
   ...taskTools,
   ...labelTools,
   ...commentTools,
+  ...notificationTools,
   ...listTools,
 ];
 
@@ -61,4 +63,5 @@ export { cardTools } from "./cards.js";
 export { taskTools } from "./tasks.js";
 export { labelTools } from "./labels.js";
 export { commentTools } from "./comments.js";
+export { notificationTools } from "./notifications.js";
 export { listTools } from "./lists.js";

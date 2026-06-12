@@ -9,7 +9,7 @@ Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/plan
 - Full PLANKA 2.0 API support
 - Type-safe with Zod validation
 - Optimized for agent workflows (combined operations, sensible defaults)
-- 13 tools covering cards, tasks, labels, comments, and lists
+- 15 tools covering cards, tasks, labels, comments, lists, and notifications
 
 ## Installation
 
@@ -114,6 +114,13 @@ Add to `~/.claude.json`:
 | `planka_add_comment` | Add a comment to a card |
 | `planka_get_comments` | Get all comments on a card |
 
+### Notifications
+
+| Tool | Description |
+|------|-------------|
+| `planka_get_notifications` | Get unread notifications for the agent user (mentions, comments, etc.) |
+| `planka_mark_notifications_read` | Mark one or all notifications as read |
+
 ### Lists
 
 | Tool | Description |
@@ -141,6 +148,12 @@ Use planka_create_card with:
 
 ```
 Use planka_move_card to move card from "To Do" to "In Progress"
+```
+
+### Check for @mentions
+
+```
+Use planka_get_notifications with types: ["mentionInComment"] to see unread mentions
 ```
 
 ## PLANKA 2.0 Compatibility

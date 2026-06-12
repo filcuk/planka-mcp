@@ -11,6 +11,7 @@ import {
   TaskSchema,
   LabelSchema,
   CommentSchema,
+  NotificationSchema,
   UserSchema,
   CardLabelSchema,
   AttachmentSchema,
@@ -53,6 +54,9 @@ export const LabelsResponse = MultiItemResponse(LabelSchema);
 
 export const CommentResponse = SingleItemResponse(CommentSchema);
 export const CommentsResponse = MultiItemResponse(CommentSchema);
+
+export const NotificationResponse = SingleItemResponse(NotificationSchema);
+export const NotificationsResponse = MultiItemResponse(NotificationSchema);
 
 export const CardLabelResponse = SingleItemResponse(CardLabelSchema);
 

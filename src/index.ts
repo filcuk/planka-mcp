@@ -3,7 +3,7 @@
  * PLANKA MCP Server
  *
  * A Model Context Protocol server for PLANKA kanban boards.
- * Provides tools for managing projects, boards, cards, tasks, labels, and comments.
+ * Provides tools for managing projects, boards, cards, tasks, labels, comments, and notifications.
  */
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
