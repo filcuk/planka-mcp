@@ -1,0 +1,10 @@
+# Copy to ~/.npmrc (or a local .npmrc) when publishing to GitHub Packages.
+# Do not commit a file that contains your token.
+#
+# Create a classic PAT at https://github.com/settings/tokens with:
+#   read:packages, write:packages, repo (repo only if the GitHub repo is private)
+
+@filcuk:registry=https://npm.pkg.github.com
+//npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
+
+//registry.npmjs.org/:_authToken=YOUR_NPM_TOKEN
