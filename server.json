@@ -1,16 +1,16 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.gogogadgetbytes/planka",
+  "name": "io.github.filcuk/planka",
   "description": "MCP server for PLANKA kanban boards. Full CRUD for cards, tasks, comments, and labels.",
   "repository": {
-    "url": "https://github.com/gogogadgetbytes/planka-mcp",
+    "url": "https://github.com/filcuk/planka-mcp",
     "source": "github"
   },
   "version": "1.0.0",
   "packages": [
     {
       "registryType": "npm",
-      "identifier": "@gogogadgetbytes/planka-mcp",
+      "identifier": "@filcuk/planka-mcp",
       "version": "1.0.0",
       "transport": {
         "type": "stdio"

@@ -14,7 +14,7 @@ The current kanban-mcp has accumulated patches for PLANKA 2.0 compatibility. A p
 - ~700 lines vs ~5000 lines (simpler, maintainable)
 - Type-safe with Zod schemas matching PLANKA's actual API
 - Optimized for agent workflows (combined operations, sensible defaults)
-- Well-documented for community release via gogogadgetbytes
+- Well-documented for community release via filcuk
 
 ### Target Version
 
