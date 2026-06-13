@@ -57,6 +57,13 @@
           "isRequired": false,
           "format": "string",
           "isSecret": false
+        },
+        {
+          "name": "PLANKA_MAX_ATTACHMENT_MB",
+          "description": "Maximum file attachment upload/download size in megabytes (default: 15)",
+          "isRequired": false,
+          "format": "number",
+          "isSecret": false
         }
       ]
     }

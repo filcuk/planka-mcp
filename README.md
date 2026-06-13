@@ -68,6 +68,7 @@ To rotate or revoke a key, use the same user management UI or update the user vi
 | `PLANKA_AGENT_PASSWORD` | Fallback | Agent user password (used when `PLANKA_API_KEY` is not set) |
 | `PLANKA_TERMS_LANGUAGE` | No | Language for automatic terms acceptance on first credential login (default: `en-US`) |
 | `PLANKA_ALLOW_DESTRUCTION` | No | Set to `true`, `1`, or `yes` to allow delete-category tools to run server-side (default: blocked) |
+| `PLANKA_MAX_ATTACHMENT_MB` | No | Max file attachment upload/download size in MB (default: `15`) |
 
 ### MCP Configuration
 
@@ -197,7 +198,7 @@ To rotate or revoke a key, use the same user management UI or update the user vi
 
 | Tool | Description | Default |
 |------|-------------|---------|
-| `planka_get_attachment` | Get attachment metadata; download file content as base64 (max 5 MB) | On |
+| `planka_get_attachment` | Get attachment metadata; download file content as base64 (default max 15 MB, configurable) | On |
 | `planka_modify_attachments` | Create or update link/file attachments (including link URL updates) | On |
 | `planka_delete_attachment` | Delete an attachment | Blocked |
 

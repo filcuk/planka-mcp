@@ -20,9 +20,11 @@ import {
   getAttachmentUrl,
 } from "../lib/attachments.js";
 import { PlankaNotFoundError, PlankaValidationError } from "../errors.js";
+import {
+  getMaxAttachmentBytes,
+  getMaxAttachmentMb,
+} from "../config/attachment-config.js";
 import { getCard } from "./cards.js";
-
-const MAX_FILE_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 
 /**
  * Decode base64 string to a Blob for multipart upload.
@@ -201,9 +203,9 @@ export async function downloadAttachment(
 
   const { data, contentType } = await plankaClient.getBinary(downloadPath);
 
-  if (data.length > MAX_FILE_ATTACHMENT_BYTES) {
+  if (data.length > getMaxAttachmentBytes()) {
     throw new PlankaValidationError(
-      `Attachment exceeds ${MAX_FILE_ATTACHMENT_BYTES / (1024 * 1024)} MB download limit`
+      `Attachment exceeds ${getMaxAttachmentMb()} MB download limit`
     );
   }
 

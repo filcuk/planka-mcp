@@ -10,7 +10,10 @@ import {
 } from "../operations/attachments.js";
 import { getAttachmentUrl } from "../lib/attachments.js";
 import { PlankaError } from "../errors.js";
+import { getMaxAttachmentMb } from "../config/attachment-config.js";
 import { defineTool } from "./types.js";
+
+const maxAttachmentMb = getMaxAttachmentMb();
 
 function handleError(error: unknown) {
   if (error instanceof PlankaError) {
@@ -25,7 +28,7 @@ function handleError(error: unknown) {
 export const getAttachmentTool = defineTool("read", {
   name: "planka_get_attachment",
   description:
-    "Get attachment metadata for a card. For file attachments, optionally download content as base64 (max 5 MB). Link attachments return their external URL.",
+    `Get attachment metadata for a card. For file attachments, optionally download content as base64 (max ${maxAttachmentMb} MB). Link attachments return their external URL.`,
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -74,7 +77,7 @@ export const getAttachmentTool = defineTool("read", {
 export const modifyAttachmentsTool = defineTool("modify", {
   name: "planka_modify_attachments",
   description:
-    "Create or update attachments on a card. Prefer link attachments for URLs; use file type for small artifacts (base64, max 5 MB). Updating a link URL recreates the attachment with a new ID.",
+    `Create or update attachments on a card. Prefer link attachments for URLs; use file type for small artifacts (base64, max ${maxAttachmentMb} MB). Updating a link URL recreates the attachment with a new ID.`,
   inputSchema: {
     type: "object" as const,
     properties: {

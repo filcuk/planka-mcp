@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, afterEach } from "vitest";
 import {
   CreateCardSchema,
   UpdateCardSchema,
@@ -153,15 +153,43 @@ describe("StopwatchSchema", () => {
 });
 
 describe("CreateFileAttachmentSchema", () => {
-  it("rejects files over 5 MB", () => {
-    const large = Buffer.alloc(5 * 1024 * 1024 + 1).toString("base64");
+  const ENV_KEY = "PLANKA_MAX_ATTACHMENT_MB";
+
+  afterEach(() => {
+    delete process.env[ENV_KEY];
+  });
+
+  it("rejects files over the default 15 MB limit", () => {
+    const large = Buffer.alloc(15 * 1024 * 1024 + 1).toString("base64");
     expect(() =>
       CreateFileAttachmentSchema.parse({
         cardId: "card-1",
         name: "big.bin",
         fileBase64: large,
       })
-    ).toThrow();
+    ).toThrow(/15 MB/);
+  });
+
+  it("respects PLANKA_MAX_ATTACHMENT_MB for uploads", () => {
+    process.env[ENV_KEY] = "5";
+    const withinLimit = Buffer.alloc(5 * 1024 * 1024).toString("base64");
+    const overLimit = Buffer.alloc(5 * 1024 * 1024 + 1).toString("base64");
+
+    expect(() =>
+      CreateFileAttachmentSchema.parse({
+        cardId: "card-1",
+        name: "ok.bin",
+        fileBase64: withinLimit,
+      })
+    ).not.toThrow();
+
+    expect(() =>
+      CreateFileAttachmentSchema.parse({
+        cardId: "card-1",
+        name: "big.bin",
+        fileBase64: overLimit,
+      })
+    ).toThrow(/5 MB/);
   });
 });
 

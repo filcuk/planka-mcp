@@ -155,7 +155,7 @@ export const CreateLinkAttachmentSchema = z.object({
 });
 export type CreateLinkAttachmentInput = z.input<typeof CreateLinkAttachmentSchema>;
 
-const MAX_FILE_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+import { getMaxAttachmentBytes, getMaxAttachmentMb } from "../config/attachment-config.js";
 
 export const CreateFileAttachmentSchema = z.object({
   cardId: z.string(),
@@ -163,13 +163,26 @@ export const CreateFileAttachmentSchema = z.object({
   fileBase64: z
     .string()
     .min(1, "fileBase64 required")
-    .refine((value) => {
+    .superRefine((value, ctx) => {
+      let byteLength: number;
       try {
-        return Buffer.from(value, "base64").length <= MAX_FILE_ATTACHMENT_BYTES;
+        byteLength = Buffer.from(value, "base64").length;
       } catch {
-        return false;
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid base64 file content",
+        });
+        return;
       }
-    }, `File exceeds ${MAX_FILE_ATTACHMENT_BYTES / (1024 * 1024)} MB limit`),
+
+      const maxBytes = getMaxAttachmentBytes();
+      if (byteLength > maxBytes) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: `File exceeds ${getMaxAttachmentMb()} MB limit`,
+        });
+      }
+    }),
   mimeType: z.string().optional(),
 });
 export type CreateFileAttachmentInput = z.input<typeof CreateFileAttachmentSchema>;
