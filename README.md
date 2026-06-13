@@ -10,19 +10,19 @@ Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/plan
 - Optimized for agent workflows (combined operations, sensible defaults)
 - 25 tools covering cards, tasks, labels, comments, lists, notifications, members, attachments, custom fields, and discovery
 
-## Installation
+## Setup
 
-```bash
-npm install @filcuk/planka-mcp
-```
-
-Or run directly:
-
+Run directly:
 ```bash
 npx @filcuk/planka-mcp
 ```
 
-## Configuration
+Install:
+```bash
+npm install @filcuk/planka-mcp
+```
+
+## Server Configuration
 
 ### Environment Variables
 
@@ -32,29 +32,7 @@ npx @filcuk/planka-mcp
 | `PLANKA_AGENT_EMAIL` | Yes | Agent user email |
 | `PLANKA_AGENT_PASSWORD` | Yes | Agent user password |
 
-### Claude Desktop
-
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-
-```json
-{
-  "mcpServers": {
-    "planka": {
-      "command": "npx",
-      "args": ["@filcuk/planka-mcp"],
-      "env": {
-        "PLANKA_BASE_URL": "https://planka.example.com",
-        "PLANKA_AGENT_EMAIL": "agent@example.com",
-        "PLANKA_AGENT_PASSWORD": "your-password"
-      }
-    }
-  }
-}
-```
-
-### Claude Code
-
-Add to `~/.claude.json`:
+### MCP Configuration
 
 ```json
 {
