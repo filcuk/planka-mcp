@@ -1,6 +1,6 @@
 {
   "name": "@filcuk/planka-mcp",
-  "version": "1.3.2",
+  "version": "1.3.3",
   "mcpName": "io.github.filcuk/planka",
   "description": "MCP server for PLANKA kanban boards",
   "type": "module",
