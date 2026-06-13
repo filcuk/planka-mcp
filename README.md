@@ -1,15 +1,14 @@
 # PLANKA MCP Server
 
-A Model Context Protocol (MCP) server for [PLANKA](https://planka.app) kanban boards, purpose-built for Claude and other AI agents.
-
+The most complete Model Context Protocol (MCP) server for [PLANKA](https://planka.app) kanban boards.
 Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/planka-mcp).
 
 ## Features
 
-- Full PLANKA 2.0 API support
+- Most complete v2 API support
 - Type-safe with Zod validation
 - Optimized for agent workflows (combined operations, sensible defaults)
-- 15 tools covering cards, tasks, labels, comments, lists, and notifications
+- 25 tools covering cards, tasks, labels, comments, lists, notifications, members, attachments, custom fields, and discovery
 
 ## Installation
 
@@ -80,7 +79,7 @@ Add to `~/.claude.json`:
 | Tool | Description |
 |------|-------------|
 | `planka_get_structure` | Get projects, boards, and lists hierarchy |
-| `planka_get_board` | Get a board with all cards, lists, and labels |
+| `planka_get_board` | Get a board with cards, labels, members, and custom fields |
 
 ### Cards
 
@@ -89,16 +88,18 @@ Add to `~/.claude.json`:
 | `planka_create_card` | Create a card (optionally with tasks) |
 | `planka_update_card` | Update card properties |
 | `planka_move_card` | Move card to different list/position |
-| `planka_get_card` | Get card details with tasks/comments |
+| `planka_get_card` | Get card details with tasks, comments, members, attachments |
 | `planka_delete_card` | Delete a card |
+| `planka_search_cards` | Search/filter cards in a list |
 
 ### Tasks
 
 | Tool | Description |
 |------|-------------|
 | `planka_create_tasks` | Add tasks (checklist items) to a card |
-| `planka_update_task` | Update task name or completion |
+| `planka_update_task` | Update task name, completion, position, or assignee |
 | `planka_delete_task` | Delete a task |
+| `planka_manage_task_lists` | Create or delete named checklists on a card |
 
 ### Labels
 
@@ -113,12 +114,13 @@ Add to `~/.claude.json`:
 |------|-------------|
 | `planka_add_comment` | Add a comment to a card |
 | `planka_get_comments` | Get all comments on a card |
+| `planka_manage_comments` | Update or delete a comment |
 
 ### Notifications
 
 | Tool | Description |
 |------|-------------|
-| `planka_get_notifications` | Get unread notifications for the agent user (mentions, comments, etc.) |
+| `planka_get_notifications` | Get unread notifications for the agent user |
 | `planka_mark_notifications_read` | Mark one or all notifications as read |
 
 ### Lists
@@ -126,6 +128,31 @@ Add to `~/.claude.json`:
 | Tool | Description |
 |------|-------------|
 | `planka_manage_lists` | Create/update/delete lists |
+
+### Members
+
+| Tool | Description |
+|------|-------------|
+| `planka_get_board_members` | List board users (for assigning to cards) |
+| `planka_set_card_members` | Add/remove users on a card |
+
+### Attachments
+
+| Tool | Description |
+|------|-------------|
+| `planka_manage_attachments` | Create/update/delete link attachments |
+
+### Custom Fields
+
+| Tool | Description |
+|------|-------------|
+| `planka_set_custom_field_values` | Set or clear custom field values by name |
+
+### Discovery
+
+| Tool | Description |
+|------|-------------|
+| `planka_get_actions` | Get activity history for a board or card |
 
 ## Usage Examples
 
@@ -164,15 +191,6 @@ Agents work best with explicit guardrails: which board to use, what they must no
 2. Replace `YOUR_BOARD_ID`, `YOUR_BOARD_NAME`, and `YOUR_MCP_SERVER` with your values (find the board ID via `planka_get_structure` or `planka_get_board`).
 3. Adjust the **Forbidden actions** and **Card placement** sections to match your workflow.
 
-The example scopes the agent to a single board, requires MCP-only access, blocks label edits and deletes by default, and asks for confirmation before bulk changes.
-
-## PLANKA 2.0 Compatibility
-
-This server is designed for PLANKA 2.0 and handles the API differences from 1.x:
-
-- Card creation includes required `type` field
-- Label endpoints use `/card-labels` path
-- Optional fields handled gracefully
 
 ## Development
 
@@ -198,7 +216,7 @@ MIT
 ## Links
 
 - [PLANKA](https://planka.app) - The kanban board
-- [PLANKA Swagger](https://plankanban.github.io/planka/swagger-ui/swagger.json) - The kanban board
+- [PLANKA Swagger](https://plankanban.github.io/planka/swagger-ui/swagger.json) - API reference
 - [MCP SDK](https://github.com/modelcontextprotocol/sdk) - Model Context Protocol
 - [Design Document](./DESIGN.md) - Technical design details
 - [Cursor rule example](./examples/cursor-rule-planka-scope.mdc) - Agent scope and guardrails template

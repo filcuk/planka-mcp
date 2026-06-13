@@ -6,7 +6,10 @@ import {
   updateList,
   deleteList,
 } from "../operations/lists.js";
+import { ListColorSchema } from "../schemas/entities.js";
 import { PlankaError } from "../errors.js";
+
+const validListColors = ListColorSchema.options.join(", ");
 
 /**
  * Tool: planka_manage_lists
@@ -45,6 +48,10 @@ export const manageListsTool = {
         description:
           "List type (defaults to active for normal kanban columns)",
       },
+      color: {
+        type: ["string", "null"],
+        description: `List color. Valid colors: ${validListColors}`,
+      },
     },
     required: ["action"],
   },
@@ -55,6 +62,7 @@ export const manageListsTool = {
     name?: string;
     position?: number;
     type?: "active" | "closed" | "archive" | "trash";
+    color?: string | null;
   }) => {
     try {
       switch (params.action) {
@@ -127,6 +135,25 @@ export const manageListsTool = {
           const updates: Record<string, unknown> = {};
           if (params.name !== undefined) updates.name = params.name;
           if (params.position !== undefined) updates.position = params.position;
+          if (params.color !== undefined) {
+            if (params.color === null) {
+              updates.color = null;
+            } else {
+              const colorParse = ListColorSchema.safeParse(params.color);
+              if (!colorParse.success) {
+                return {
+                  content: [
+                    {
+                      type: "text" as const,
+                      text: `Error: Invalid color '${params.color}'. Valid colors: ${validListColors}`,
+                    },
+                  ],
+                  isError: true,
+                };
+              }
+              updates.color = colorParse.data;
+            }
+          }
 
           const list = await updateList(params.listId, updates);
 

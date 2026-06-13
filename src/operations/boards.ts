@@ -10,6 +10,11 @@ import {
   CardLabel,
   TaskList,
   Task,
+  User,
+  CardMembership,
+  CustomFieldGroup,
+  CustomField,
+  CustomFieldValue,
 } from "../schemas/entities.js";
 import { BoardResponse, BoardIncludedSchema } from "../schemas/responses.js";
 
@@ -22,8 +27,13 @@ export interface BoardDetails {
   cards: Card[];
   labels: Label[];
   cardLabels: CardLabel[];
+  cardMemberships: CardMembership[];
   taskLists: TaskList[];
   tasks: Task[];
+  users: User[];
+  customFieldGroups: CustomFieldGroup[];
+  customFields: CustomField[];
+  customFieldValues: CustomFieldValue[];
 }
 
 /**
@@ -52,9 +62,28 @@ export async function getBoard(boardId: string): Promise<BoardDetails> {
     cards: included.cards || [],
     labels: (included.labels || []).sort((a, b) => a.position - b.position),
     cardLabels: included.cardLabels || [],
+    cardMemberships: included.cardMemberships || [],
     taskLists: (included.taskLists || []).sort((a, b) => a.position - b.position),
     tasks: included.tasks || [],
+    users: included.users || [],
+    customFieldGroups: included.customFieldGroups || [],
+    customFields: included.customFields || [],
+    customFieldValues: included.customFieldValues || [],
   };
+}
+
+/**
+ * Get board members (users with board access).
+ */
+export async function getBoardMembers(
+  boardId: string
+): Promise<Pick<User, "id" | "name" | "username">[]> {
+  const details = await getBoard(boardId);
+  return details.users.map((user) => ({
+    id: user.id,
+    name: user.name,
+    username: user.username,
+  }));
 }
 
 /**
@@ -68,23 +97,25 @@ export async function getBoardWithTaskCounts(
   cards: CardWithTaskCounts[];
   labels: Label[];
   cardLabels: CardLabel[];
+  cardMemberships: CardMembership[];
+  users: User[];
+  customFieldGroups: CustomFieldGroup[];
+  customFields: CustomField[];
+  customFieldValues: CustomFieldValue[];
 }> {
   const details = await getBoard(boardId);
 
-  // Build taskList -> cardId mapping (PLANKA 2.0: tasks belong to taskLists, not cards directly)
   const taskListToCard = new Map<string, string>();
   for (const taskList of details.taskLists) {
     taskListToCard.set(taskList.id, taskList.cardId);
   }
 
-  // Build task count map by card
   const taskCountsByCard = new Map<
     string,
     { total: number; completed: number }
   >();
 
   for (const task of details.tasks) {
-    // Get cardId via the taskList
     const cardId = taskListToCard.get(task.taskListId);
     if (!cardId) continue;
 
@@ -99,7 +130,6 @@ export async function getBoardWithTaskCounts(
     taskCountsByCard.set(cardId, counts);
   }
 
-  // Enrich cards with task counts
   const cardsWithCounts: CardWithTaskCounts[] = details.cards.map((card) => {
     const counts = taskCountsByCard.get(card.id) || { total: 0, completed: 0 };
     return {
@@ -115,6 +145,11 @@ export async function getBoardWithTaskCounts(
     cards: cardsWithCounts,
     labels: details.labels,
     cardLabels: details.cardLabels,
+    cardMemberships: details.cardMemberships,
+    users: details.users,
+    customFieldGroups: details.customFieldGroups,
+    customFields: details.customFields,
+    customFieldValues: details.customFieldValues,
   };
 }
 

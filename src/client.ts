@@ -230,6 +230,61 @@ class PlankaClient {
   }
 
   /**
+   * POST request with multipart form data (no Content-Type header — fetch sets boundary).
+   */
+  async postForm<T>(path: string, formData: FormData): Promise<T> {
+    return this.requestForm<T>("POST", path, formData);
+  }
+
+  /**
+   * Makes an authenticated multipart request.
+   */
+  private async requestForm<T>(
+    method: string,
+    path: string,
+    formData: FormData,
+    isRetry = false
+  ): Promise<T> {
+    const config = this.getConfig();
+    const token = await this.getToken();
+    const url = `${config.baseUrl}${path}`;
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        method,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+        signal: this.createTimeoutSignal(),
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new PlankaNetworkError(`Request timeout: ${method} ${path}`, error);
+      }
+      throw new PlankaNetworkError(`Network error: ${method} ${path}`, error);
+    }
+
+    if (response.status === 204) {
+      return undefined as T;
+    }
+
+    const data = await this.safeParseJson(response);
+
+    if (!response.ok) {
+      if (response.status === 401 && this.token && !isRetry) {
+        this.token = null;
+        this.tokenExpiresAt = 0;
+        return this.requestForm(method, path, formData, true);
+      }
+      throw createPlankaError(response.status, data, `${method} ${path}`);
+    }
+
+    return data as T;
+  }
+
+  /**
    * DELETE request.
    */
   async delete(path: string): Promise<void> {

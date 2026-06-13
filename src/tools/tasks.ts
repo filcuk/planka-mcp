@@ -1,7 +1,13 @@
 /**
  * Task tools for PLANKA MCP server.
  */
-import { createTasks, updateTask, deleteTask } from "../operations/tasks.js";
+import {
+  createTasks,
+  updateTask,
+  deleteTask,
+  createTaskList,
+  deleteTaskList,
+} from "../operations/tasks.js";
 import { PlankaError } from "../errors.js";
 
 /**
@@ -42,10 +48,10 @@ export const createTasksTool = {
               {
                 success: true,
                 tasksCreated: tasks.length,
-                tasks: tasks.map((t) => ({
-                  id: t.id,
-                  name: t.name,
-                  isCompleted: t.isCompleted,
+                tasks: tasks.map((task) => ({
+                  id: task.id,
+                  name: task.name,
+                  isCompleted: task.isCompleted,
                 })),
               },
               null,
@@ -72,7 +78,8 @@ export const createTasksTool = {
  */
 export const updateTaskTool = {
   name: "planka_update_task",
-  description: "Update a task's name or completion status.",
+  description:
+    "Update a task's name, completion status, position, or assignee.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -88,6 +95,14 @@ export const updateTaskTool = {
         type: "boolean",
         description: "Mark as complete/incomplete",
       },
+      position: {
+        type: "number",
+        description: "New position within the task list",
+      },
+      assigneeUserId: {
+        type: ["string", "null"],
+        description: "User ID to assign (null to unassign)",
+      },
     },
     required: ["taskId"],
   },
@@ -95,15 +110,20 @@ export const updateTaskTool = {
     taskId: string;
     name?: string;
     isCompleted?: boolean;
+    position?: number;
+    assigneeUserId?: string | null;
   }) => {
     try {
       const { taskId, ...updates } = params;
 
-      // Only include defined fields
       const filteredUpdates: Record<string, unknown> = {};
       if (updates.name !== undefined) filteredUpdates.name = updates.name;
       if (updates.isCompleted !== undefined)
         filteredUpdates.isCompleted = updates.isCompleted;
+      if (updates.position !== undefined)
+        filteredUpdates.position = updates.position;
+      if (updates.assigneeUserId !== undefined)
+        filteredUpdates.assigneeUserId = updates.assigneeUserId;
 
       const task = await updateTask(taskId, filteredUpdates);
 
@@ -118,6 +138,8 @@ export const updateTaskTool = {
                   id: task.id,
                   name: task.name,
                   isCompleted: task.isCompleted,
+                  position: task.position,
+                  assigneeUserId: task.assigneeUserId,
                 },
               },
               null,
@@ -186,4 +208,132 @@ export const deleteTaskTool = {
   },
 };
 
-export const taskTools = [createTasksTool, updateTaskTool, deleteTaskTool];
+/**
+ * Tool: planka_manage_task_lists
+ * Create or delete task lists (checklists) on a card.
+ */
+export const manageTaskListsTool = {
+  name: "planka_manage_task_lists",
+  description: "Create or delete named task lists (checklists) on a card.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      action: {
+        type: "string",
+        enum: ["create", "delete"],
+        description: "Action to perform",
+      },
+      cardId: {
+        type: "string",
+        description: "Card ID (required for create)",
+      },
+      taskListId: {
+        type: "string",
+        description: "Task list ID (required for delete)",
+      },
+      name: {
+        type: "string",
+        description: "Task list name (required for create)",
+      },
+      position: {
+        type: "number",
+        description: "Task list position",
+      },
+    },
+    required: ["action"],
+  },
+  handler: async (params: {
+    action: "create" | "delete";
+    cardId?: string;
+    taskListId?: string;
+    name?: string;
+    position?: number;
+  }) => {
+    try {
+      if (params.action === "create") {
+        if (!params.cardId || !params.name) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: "Error: cardId and name are required for create action",
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        const taskList = await createTaskList(
+          params.cardId,
+          params.name,
+          params.position
+        );
+
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  success: true,
+                  taskList: {
+                    id: taskList.id,
+                    name: taskList.name,
+                    position: taskList.position,
+                  },
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
+      if (!params.taskListId) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "Error: taskListId is required for delete action",
+            },
+          ],
+          isError: true,
+        };
+      }
+
+      await deleteTaskList(params.taskListId);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                success: true,
+                message: `Task list ${params.taskListId} deleted`,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      if (error instanceof PlankaError) {
+        return {
+          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
+          isError: true,
+        };
+      }
+      throw error;
+    }
+  },
+};
+
+export const taskTools = [
+  createTasksTool,
+  updateTaskTool,
+  deleteTaskTool,
+  manageTaskListsTool,
+];

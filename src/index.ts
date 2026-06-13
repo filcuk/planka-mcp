@@ -22,7 +22,7 @@ async function main() {
   const server = new Server(
     {
       name: "planka-mcp",
-      version: "1.1.0",
+      version: "1.2.0",
     },
     {
       capabilities: {

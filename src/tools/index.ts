@@ -8,6 +8,10 @@ import { labelTools } from "./labels.js";
 import { commentTools } from "./comments.js";
 import { notificationTools } from "./notifications.js";
 import { listTools } from "./lists.js";
+import { membershipTools } from "./memberships.js";
+import { attachmentTools } from "./attachments.js";
+import { customFieldTools } from "./custom-fields.js";
+import { discoveryTools } from "./discovery.js";
 
 /**
  * All registered tools.
@@ -20,6 +24,10 @@ export const allTools = [
   ...commentTools,
   ...notificationTools,
   ...listTools,
+  ...membershipTools,
+  ...attachmentTools,
+  ...customFieldTools,
+  ...discoveryTools,
 ];
 
 /**
@@ -65,3 +73,7 @@ export { labelTools } from "./labels.js";
 export { commentTools } from "./comments.js";
 export { notificationTools } from "./notifications.js";
 export { listTools } from "./lists.js";
+export { membershipTools } from "./memberships.js";
+export { attachmentTools } from "./attachments.js";
+export { customFieldTools } from "./custom-fields.js";
+export { discoveryTools } from "./discovery.js";

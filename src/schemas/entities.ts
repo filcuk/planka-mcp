@@ -12,6 +12,21 @@ export type CardType = z.infer<typeof CardTypeSchema>;
 export const ListTypeSchema = z.enum(["active", "closed", "archive", "trash"]);
 export type ListType = z.infer<typeof ListTypeSchema>;
 
+// List column colors (subset of label colors)
+export const ListColorSchema = z.enum([
+  "berry-red",
+  "pumpkin-orange",
+  "lagoon-blue",
+  "pink-tulip",
+  "light-mud",
+  "orange-peel",
+  "bright-moss",
+  "antique-blue",
+  "dark-granite",
+  "turquoise-sea",
+]);
+export type ListColor = z.infer<typeof ListColorSchema>;
+
 // Label colors - matches Planka server/api/models/Label.js COLORS
 export const LabelColorSchema = z.enum([
   "muddy-grey",
@@ -100,7 +115,7 @@ export const ListSchema = z.object({
   type: ListTypeSchema,
   name: z.string().nullable(), // Can be null for archive/trash
   position: z.number().nullable(),
-  color: LabelColorSchema.nullable().optional(),
+  color: z.union([ListColorSchema, LabelColorSchema]).nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
 });
@@ -117,8 +132,9 @@ export const CardSchema = z.object({
   position: z.number(),
   type: CardTypeSchema,
   dueDate: z.string().nullable().optional(),
-  isDueDateCompleted: z.boolean().optional(),
-  isCompleted: z.boolean().optional(),
+  isDueCompleted: z.boolean().nullable().optional(),
+  isClosed: z.boolean().optional(),
+  coverAttachmentId: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
 });
@@ -209,13 +225,86 @@ export const NotificationSchema = z.object({
 export type Notification = z.infer<typeof NotificationSchema>;
 
 // Attachment schema
+export const AttachmentTypeSchema = z.enum(["file", "link"]);
+export type AttachmentType = z.infer<typeof AttachmentTypeSchema>;
+
 export const AttachmentSchema = z.object({
   id: z.string(),
   cardId: z.string(),
-  creatorUserId: z.string().optional(),
+  creatorUserId: z.string().nullable().optional(),
+  type: AttachmentTypeSchema,
+  data: z.record(z.unknown()),
   name: z.string(),
-  url: z.string().optional(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
 });
 export type Attachment = z.infer<typeof AttachmentSchema>;
+
+// Card membership schema
+export const CardMembershipSchema = z.object({
+  id: z.string(),
+  cardId: z.string(),
+  userId: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
+});
+export type CardMembership = z.infer<typeof CardMembershipSchema>;
+
+// Custom field schemas
+export const CustomFieldGroupSchema = z.object({
+  id: z.string(),
+  boardId: z.string().nullable().optional(),
+  cardId: z.string().nullable().optional(),
+  baseCustomFieldGroupId: z.string().nullable().optional(),
+  position: z.number(),
+  name: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
+});
+export type CustomFieldGroup = z.infer<typeof CustomFieldGroupSchema>;
+
+export const CustomFieldSchema = z.object({
+  id: z.string(),
+  baseCustomFieldGroupId: z.string().nullable().optional(),
+  customFieldGroupId: z.string().nullable().optional(),
+  position: z.number(),
+  name: z.string(),
+  showOnFrontOfCard: z.boolean().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
+});
+export type CustomField = z.infer<typeof CustomFieldSchema>;
+
+export const CustomFieldValueSchema = z.object({
+  id: z.string(),
+  cardId: z.string(),
+  customFieldGroupId: z.string(),
+  customFieldId: z.string(),
+  content: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
+});
+export type CustomFieldValue = z.infer<typeof CustomFieldValueSchema>;
+
+// Action (activity log) schema
+export const ActionTypeSchema = z.enum([
+  "createCard",
+  "moveCard",
+  "addMemberToCard",
+  "removeMemberFromCard",
+  "completeTask",
+  "uncompleteTask",
+]);
+export type ActionType = z.infer<typeof ActionTypeSchema>;
+
+export const ActionSchema = z.object({
+  id: z.string(),
+  boardId: z.string().nullable().optional(),
+  cardId: z.string(),
+  userId: z.string().nullable().optional(),
+  type: ActionTypeSchema,
+  data: z.record(z.unknown()),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
+});
+export type Action = z.infer<typeof ActionSchema>;
