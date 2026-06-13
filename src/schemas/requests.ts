@@ -225,3 +225,42 @@ export const UpdateBoardMembershipSchema = z.object({
   canComment: z.boolean().optional(),
 });
 export type UpdateBoardMembershipInput = z.input<typeof UpdateBoardMembershipSchema>;
+
+// Project requests
+export const ProjectTypeSchema = z.enum(["private", "shared"]);
+
+export const CreateProjectSchema = z.object({
+  type: ProjectTypeSchema,
+  name: z.string().min(1).max(128),
+  description: z.string().max(1024).nullable().optional(),
+});
+export type CreateProjectInput = z.input<typeof CreateProjectSchema>;
+
+export const UpdateProjectSchema = z.object({
+  name: z.string().min(1).max(128).optional(),
+  description: z.string().max(1024).nullable().optional(),
+  isHidden: z.boolean().optional(),
+});
+export type UpdateProjectInput = z.input<typeof UpdateProjectSchema>;
+
+// Board mutation requests
+export const BoardViewSchema = z.enum(["kanban", "grid", "list"]);
+
+export const CreateBoardSchema = z.object({
+  projectId: z.string(),
+  name: z.string().min(1).max(128),
+  position: z.number().min(0).optional().default(65536),
+});
+export type CreateBoardInput = z.input<typeof CreateBoardSchema>;
+
+export const UpdateBoardSchema = z.object({
+  name: z.string().min(1).max(128).optional(),
+  position: z.number().min(0).optional(),
+  defaultView: BoardViewSchema.optional(),
+  defaultCardType: CardTypeSchema.optional(),
+  limitCardTypesToDefaultOne: z.boolean().optional(),
+  alwaysDisplayCardCreator: z.boolean().optional(),
+  expandTaskListsByDefault: z.boolean().optional(),
+  isSubscribed: z.boolean().optional(),
+});
+export type UpdateBoardInput = z.input<typeof UpdateBoardSchema>;

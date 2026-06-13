@@ -3,7 +3,13 @@
  */
 import { plankaClient } from "../client.js";
 import { Project, Board, List, ListSchema } from "../schemas/entities.js";
-import { ProjectsResponse, ProjectsIncludedSchema } from "../schemas/responses.js";
+import { ProjectsResponse, ProjectsIncludedSchema, ProjectResponse } from "../schemas/responses.js";
+import {
+  CreateProjectSchema,
+  UpdateProjectSchema,
+  CreateProjectInput,
+  UpdateProjectInput,
+} from "../schemas/requests.js";
 import { z } from "zod";
 
 /**
@@ -80,4 +86,45 @@ export async function getStructure(projectId?: string): Promise<ProjectStructure
   }
 
   return structures;
+}
+
+/**
+ * Create a project. The current user becomes a project manager.
+ */
+export async function createProject(input: CreateProjectInput): Promise<Project> {
+  const validated = CreateProjectSchema.parse(input);
+
+  const response = await plankaClient.post<unknown>("/api/projects", {
+    type: validated.type,
+    name: validated.name,
+    description: validated.description,
+  });
+
+  const parsed = ProjectResponse.parse(response);
+  return parsed.item;
+}
+
+/**
+ * Update a project.
+ */
+export async function updateProject(
+  projectId: string,
+  input: UpdateProjectInput
+): Promise<Project> {
+  const validated = UpdateProjectSchema.parse(input);
+
+  const response = await plankaClient.patch<unknown>(
+    `/api/projects/${projectId}`,
+    validated
+  );
+
+  const parsed = ProjectResponse.parse(response);
+  return parsed.item;
+}
+
+/**
+ * Delete a project (must have no boards).
+ */
+export async function deleteProject(projectId: string): Promise<void> {
+  await plankaClient.delete(`/api/projects/${projectId}`);
 }

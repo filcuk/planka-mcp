@@ -13,11 +13,7 @@ import { attachmentTools } from "./attachments.js";
 import { customFieldTools } from "./custom-fields.js";
 import { discoveryTools } from "./discovery.js";
 import { boardMembershipTools } from "./board-memberships.js";
-import {
-  getEnabledTools,
-  isToolEnabled,
-  DESTRUCTIVE_DISABLED_MESSAGE,
-} from "../config/tool-policy.js";
+import { projectBoardTools } from "./projects-boards.js";
 import type { Tool, ToolCategory } from "./types.js";
 
 export type { Tool, ToolCategory };
@@ -27,6 +23,7 @@ export type { Tool, ToolCategory };
  */
 export const allTools: Tool[] = [
   ...navigationTools,
+  ...projectBoardTools,
   ...cardTools,
   ...taskTools,
   ...labelTools,
@@ -41,17 +38,18 @@ export const allTools: Tool[] = [
 ];
 
 /**
- * Get a tool by name (including disabled delete tools).
+ * Get a tool by name.
  */
 export function getTool(name: string): Tool | undefined {
   return allTools.find((tool) => tool.name === name);
 }
 
 /**
- * Get enabled tool definitions (for MCP listTools).
+ * Get all tool definitions (for MCP listTools).
+ * All tools are advertised; disable risky ones in MCP client config (see README).
  */
 export function getToolDefinitions() {
-  return getEnabledTools(allTools).map((tool) => ({
+  return allTools.map((tool) => ({
     name: tool.name,
     description: tool.description,
     inputSchema: tool.inputSchema,
@@ -59,7 +57,7 @@ export function getToolDefinitions() {
 }
 
 /**
- * Resolve a tool call, rejecting disabled delete tools.
+ * Resolve a tool call by name.
  */
 export function resolveToolCall(name: string):
   | { tool: Tool }
@@ -68,16 +66,12 @@ export function resolveToolCall(name: string):
   if (!tool) {
     return { error: `Unknown tool: ${name}` };
   }
-  if (!isToolEnabled(tool)) {
-    return { error: DESTRUCTIVE_DISABLED_MESSAGE };
-  }
   return { tool };
 }
 
-export { DESTRUCTIVE_DISABLED_MESSAGE };
-
 // Re-export individual tool groups
 export { navigationTools } from "./navigation.js";
+export { projectBoardTools } from "./projects-boards.js";
 export { cardTools } from "./cards.js";
 export { taskTools } from "./tasks.js";
 export { labelTools } from "./labels.js";

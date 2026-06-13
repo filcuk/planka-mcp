@@ -5,11 +5,13 @@ Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/plan
 
 ## Features
 
-- **Most complete** v2 API support
+- **Most complete** v2 API support (v2.0.1)
 - **Type-safe** with Zod validation
 - **Optimized** for agent workflows: combined operations, sensible defaults
-- **Safe-by-default** tool gating: destructive tools start disabled
-- **35 tools** covering cards, tasks, labels, comments, lists, notifications, members, attachments, custom fields, and discovery
+- **Safe-by-default**: all tools are advertised; risky tools are disabled in the default MCP client config via `disabledTools`
+- **Automatic terms acceptance** on first login when the Planka instance requires it
+- **39 tools** covering cards, tasks, labels, comments, lists, notifications, members, attachments, custom fields, projects, boards, and discovery
+- Includes example agent rules
 
 ## Setup
 
@@ -32,9 +34,11 @@ npm install @filcuk/planka-mcp
 | `PLANKA_BASE_URL` | Yes | Your PLANKA server URL |
 | `PLANKA_AGENT_EMAIL` | Yes | Agent user email |
 | `PLANKA_AGENT_PASSWORD` | Yes | Agent user password |
-| `PLANKA_ENABLE_DESTRUCTIVE` | No | Set to `true`, `1`, or `yes` to enable delete-category tools |
+| `PLANKA_TERMS_LANGUAGE` | No | Language for terms acceptance on first login (default: `en-US`) |
 
 ### MCP Configuration
+
+All tools are registered with the MCP client. Disable risky tools in your MCP client config rather than hiding them server-side — this keeps them visible in the editor so you can enable them when needed.
 
 ```json
 {
@@ -46,15 +50,34 @@ npm install @filcuk/planka-mcp
         "PLANKA_BASE_URL": "https://planka.example.com",
         "PLANKA_AGENT_EMAIL": "agent@example.com",
         "PLANKA_AGENT_PASSWORD": "your-password"
-      }
+      },
+      "disabledTools": [
+        "planka_clear_custom_field_value",
+        "planka_delete_attachment",
+        "planka_delete_board",
+        "planka_delete_board_member",
+        "planka_delete_card",
+        "planka_delete_comment",
+        "planka_delete_label",
+        "planka_delete_list",
+        "planka_delete_project",
+        "planka_delete_task",
+        "planka_delete_task_list",
+        "planka_modify_boards",
+        "planka_modify_projects",
+        "planka_remove_card_labels",
+        "planka_remove_card_members"
+      ]
     }
   }
 }
 ```
 
+Remove tools from `disabledTools` to enable them for your agent.
+
 ## Available Tools
 
-Delete-category tools are disabled unless `PLANKA_ENABLE_DESTRUCTIVE=true` is set in the MCP server env.
+The **Default** column reflects recommended client-side settings. Delete and project/board management tools are off by default.
 
 ### Navigation
 
@@ -62,6 +85,15 @@ Delete-category tools are disabled unless `PLANKA_ENABLE_DESTRUCTIVE=true` is se
 |------|-------------|---------|
 | `planka_get_structure` | Get projects, boards, and lists hierarchy | On |
 | `planka_get_board` | Get a board with cards, labels, members, and custom fields | On |
+
+### Projects & boards
+
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_modify_projects` | Create or update projects | Off |
+| `planka_delete_project` | Delete an empty project | Off |
+| `planka_modify_boards` | Create or update boards | Off |
+| `planka_delete_board` | Delete a board and all its contents | Off |
 
 ### Cards
 
@@ -167,6 +199,7 @@ cd planka-mcp
 npm install
 npm run build
 npm test
+npm start
 ```
 
 ## Links

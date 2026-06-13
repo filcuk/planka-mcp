@@ -8,11 +8,16 @@ import {
   createPlankaError,
 } from "./errors.js";
 import { AuthResponse } from "./schemas/responses.js";
+import {
+  extractTermsAcceptancePayload,
+  isTermsAcceptanceRequired,
+} from "./lib/terms-auth.js";
 
 interface ClientConfig {
   baseUrl: string;
   email: string;
   password: string;
+  termsLanguage: string;
 }
 
 /**
@@ -46,6 +51,7 @@ function getConfig(): ClientConfig {
     baseUrl: baseUrl!.replace(/\/$/, ""), // Remove trailing slash
     email: email!,
     password: password!,
+    termsLanguage: process.env.PLANKA_TERMS_LANGUAGE?.trim() || "en-US",
   };
 }
 
@@ -80,6 +86,7 @@ class PlankaClient {
 
   /**
    * Authenticates and retrieves a new JWT token.
+   * Automatically accepts terms when required (first login for new users).
    */
   private async authenticate(): Promise<string> {
     const config = this.getConfig();
@@ -111,23 +118,121 @@ class PlankaClient {
       );
     }
 
-    if (!response.ok) {
-      const body = await this.safeParseJson(response);
-      throw new PlankaAuthError(
-        `Authentication failed: ${response.status} ${response.statusText}`
+    const body = await this.safeParseJson(response);
+
+    if (response.ok) {
+      return this.storeTokenFromBody(body);
+    }
+
+    if (isTermsAcceptanceRequired(response.status, body)) {
+      const termsPayload = extractTermsAcceptancePayload(body);
+      if (termsPayload) {
+        return this.acceptTermsAndAuthenticate(termsPayload.pendingToken);
+      }
+    }
+
+    throw new PlankaAuthError(
+      `Authentication failed: ${response.status} ${response.statusText}${
+        typeof body === "object" &&
+        body !== null &&
+        "message" in body &&
+        body.message
+          ? ` — ${String((body as Record<string, unknown>).message)}`
+          : ""
+      }`
+    );
+  }
+
+  private storeTokenFromBody(body: unknown): string {
+    const parsed = AuthResponse.parse(body);
+    this.tokenExpiresAt = Date.now() + 25 * 60 * 1000;
+    this.token = parsed.item;
+    return this.token;
+  }
+
+  /**
+   * Complete login after terms acceptance is required.
+   */
+  private async acceptTermsAndAuthenticate(
+    pendingToken: string
+  ): Promise<string> {
+    const config = this.getConfig();
+    const termsUrl = `${config.baseUrl}/api/terms?language=${encodeURIComponent(config.termsLanguage)}`;
+
+    let termsResponse: Response;
+    try {
+      termsResponse = await fetch(termsUrl, {
+        signal: this.createTimeoutSignal(),
+      });
+    } catch (error) {
+      throw new PlankaNetworkError(
+        `Failed to fetch terms from PLANKA at ${config.baseUrl}`,
+        error
       );
     }
 
-    const data = await response.json();
-    const parsed = AuthResponse.parse(data);
+    const termsBody = await this.safeParseJson(termsResponse);
+    if (!termsResponse.ok) {
+      throw new PlankaAuthError(
+        `Failed to fetch terms for acceptance (${termsResponse.status})`
+      );
+    }
 
-    // PLANKA tokens are valid for 30 minutes by default.
-    // We refresh after 25 minutes to avoid edge cases.
-    // If PLANKA's token lifetime changes, adjust this value.
-    this.tokenExpiresAt = Date.now() + 25 * 60 * 1000;
-    this.token = parsed.item;
+    const signature =
+      typeof termsBody === "object" &&
+      termsBody !== null &&
+      "item" in termsBody &&
+      typeof (termsBody as Record<string, unknown>).item === "object" &&
+      (termsBody as Record<string, unknown>).item !== null &&
+      "signature" in ((termsBody as Record<string, unknown>).item as object)
+        ? String(
+            (
+              (termsBody as Record<string, unknown>).item as Record<
+                string,
+                unknown
+              >
+            ).signature
+          )
+        : undefined;
 
-    return this.token;
+    if (!signature) {
+      throw new PlankaAuthError("Terms response did not include a signature");
+    }
+
+    const acceptUrl = `${config.baseUrl}/api/access-tokens/accept-terms`;
+    let acceptResponse: Response;
+    try {
+      acceptResponse = await fetch(acceptUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pendingToken,
+          signature,
+          initialLanguage: config.termsLanguage,
+        }),
+        signal: this.createTimeoutSignal(),
+      });
+    } catch (error) {
+      throw new PlankaNetworkError(
+        `Failed to accept terms at ${config.baseUrl}`,
+        error
+      );
+    }
+
+    const acceptBody = await this.safeParseJson(acceptResponse);
+    if (!acceptResponse.ok) {
+      const message =
+        typeof acceptBody === "object" &&
+        acceptBody !== null &&
+        "message" in acceptBody
+          ? String((acceptBody as Record<string, unknown>).message)
+          : acceptResponse.statusText;
+      throw new PlankaAuthError(`Terms acceptance failed: ${message}`);
+    }
+
+    return this.storeTokenFromBody(acceptBody);
   }
 
   /**

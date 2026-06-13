@@ -10,6 +10,7 @@ export interface Tool {
   name: string;
   description: string;
   category: ToolCategory;
+  /** When false, disable this tool in MCP client config (e.g. disabledTools). */
   defaultEnabled: boolean;
   inputSchema: {
     type: "object";
@@ -34,17 +35,22 @@ type ToolDefinition<P = unknown> = {
   handler: (params: P) => ToolHandlerResult;
 };
 
+type DefineToolOptions = {
+  defaultEnabled?: boolean;
+};
+
 /**
- * Attach category metadata used for safe-by-default gating.
+ * Attach category metadata. Delete tools default to defaultEnabled=false.
  */
 export function defineTool<P = unknown>(
   category: ToolCategory,
-  tool: ToolDefinition<P>
+  tool: ToolDefinition<P>,
+  options?: DefineToolOptions
 ): Tool {
   return {
     ...tool,
     handler: tool.handler as Tool["handler"],
     category,
-    defaultEnabled: category !== "delete",
+    defaultEnabled: options?.defaultEnabled ?? category !== "delete",
   };
 }

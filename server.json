@@ -38,8 +38,8 @@
           "isSecret": true
         },
         {
-          "name": "PLANKA_ENABLE_DESTRUCTIVE",
-          "description": "Set to true, 1, or yes to enable delete-category tools",
+          "name": "PLANKA_TERMS_LANGUAGE",
+          "description": "Language code for automatic terms acceptance on first login (default: en-US)",
           "isRequired": false,
           "format": "string",
           "isSecret": false

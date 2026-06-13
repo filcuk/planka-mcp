@@ -55,6 +55,13 @@ Never delete boards, lists, cards, tasks or comments. Do not call:
 - `planka_clear_custom_field_value`
 - `planka_delete_attachment`
 - `planka_delete_board_member`
+- `planka_delete_project`
+- `planka_delete_board`
+
+Do not create or restructure projects or boards. Do not call:
+
+- `planka_modify_projects`
+- `planka_modify_boards`
 
 Do not use any tool that removes boards, lists, cards, tasks, comments, labels, members, or attachments.
 

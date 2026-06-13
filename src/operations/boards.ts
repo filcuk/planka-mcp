@@ -18,6 +18,12 @@ import {
   CustomFieldValue,
 } from "../schemas/entities.js";
 import { BoardResponse, BoardIncludedSchema } from "../schemas/responses.js";
+import {
+  CreateBoardSchema,
+  UpdateBoardSchema,
+  CreateBoardInput,
+  UpdateBoardInput,
+} from "../schemas/requests.js";
 
 /**
  * Full board details with all included entities.
@@ -179,6 +185,50 @@ export async function getBoardWithTaskCounts(
     customFields: details.customFields,
     customFieldValues: details.customFieldValues,
   };
+}
+
+/**
+ * Create a board in a project.
+ */
+export async function createBoard(input: CreateBoardInput): Promise<Board> {
+  const validated = CreateBoardSchema.parse(input);
+
+  const formData = new FormData();
+  formData.append("name", validated.name);
+  formData.append("position", String(validated.position));
+
+  const response = await plankaClient.postForm<unknown>(
+    `/api/projects/${validated.projectId}/boards`,
+    formData
+  );
+
+  const parsed = BoardResponse.parse(response);
+  return parsed.item;
+}
+
+/**
+ * Update a board's settings.
+ */
+export async function updateBoard(
+  boardId: string,
+  input: UpdateBoardInput
+): Promise<Board> {
+  const validated = UpdateBoardSchema.parse(input);
+
+  const response = await plankaClient.patch<unknown>(
+    `/api/boards/${boardId}`,
+    validated
+  );
+
+  const parsed = BoardResponse.parse(response);
+  return parsed.item;
+}
+
+/**
+ * Delete a board and all its contents.
+ */
+export async function deleteBoard(boardId: string): Promise<void> {
+  await plankaClient.delete(`/api/boards/${boardId}`);
 }
 
 /**
