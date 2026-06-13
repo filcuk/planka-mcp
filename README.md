@@ -8,8 +8,8 @@ Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/plan
 - **Most complete** v2 API support (v2.0.1)
 - **Type-safe** with Zod validation
 - **Optimized** for agent workflows: combined operations, sensible defaults
-- **Safe-by-default**: all tools are advertised; risky tools are disabled in the default MCP client config via `disabledTools`
-- **Automatic terms acceptance** on first login when the Planka instance requires it
+- **Safe-by-default**: risky tools are disabled in the default MCP client config via `disabledTools`, and delete tools are blocked server-side unless `PLANKA_ALLOW_DESTRUCTION=true`
+- **API key authentication** by default, with email/password fallback and automatic terms acceptance on first credential login
 - **40 tools** covering cards, tasks, labels, comments, lists, notifications, members, attachments, custom fields, projects, boards, and discovery
 - Includes example agent rules
 
@@ -27,18 +27,52 @@ npm install @filcuk/planka-mcp
 
 ## Server Configuration
 
+### Authentication
+
+The server prefers **`PLANKA_API_KEY`** (recommended for agents). If no API key is set, it falls back to **`PLANKA_AGENT_EMAIL`** and **`PLANKA_AGENT_PASSWORD`**.
+
+#### Generate an API key
+
+Use a dedicated Planka user for your agent (not your personal account). The agent user must already exist and have accepted terms if your instance requires them.
+
+**Option 1 — Planka admin UI (Planka v2+)**
+
+1. Log in to Planka as an **admin**.
+2. Open **Users** in the admin area.
+3. Select the agent user.
+4. Generate an API key from the user's API key actions.
+5. Copy the key immediately — Planka shows the full key **only once**.
+
+**Option 2 — REST API**
+
+1. Log in as an admin and obtain a JWT (or use an existing admin session).
+2. Find the agent user's ID (for example via `GET /api/users`).
+3. Create a key:
+
+```bash
+curl -X POST "https://planka.example.com/api/users/USER_ID/api-key" \
+  -H "Authorization: Bearer ADMIN_JWT"
+```
+
+4. Copy `included.apiKey` from the JSON response. It cannot be retrieved again later.
+
+To rotate or revoke a key, use the same user management UI or update the user via the Planka API.
+
 ### Environment Variables
 
 | Variable | Required | Description |
 |----------|----------|-------------|
 | `PLANKA_BASE_URL` | Yes | Your PLANKA server URL |
-| `PLANKA_AGENT_EMAIL` | Yes | Agent user email |
-| `PLANKA_AGENT_PASSWORD` | Yes | Agent user password |
-| `PLANKA_TERMS_LANGUAGE` | No | Language for terms acceptance on first login (default: `en-US`) |
+| `PLANKA_API_KEY` | Recommended | Agent API key (`X-Api-Key` header). Preferred over credentials. |
+| `PLANKA_AGENT_EMAIL` | Fallback | Agent user email (used when `PLANKA_API_KEY` is not set) |
+| `PLANKA_AGENT_PASSWORD` | Fallback | Agent user password (used when `PLANKA_API_KEY` is not set) |
+| `PLANKA_TERMS_LANGUAGE` | No | Language for automatic terms acceptance on first credential login (default: `en-US`) |
+| `PLANKA_ALLOW_DESTRUCTION` | No | Set to `true`, `1`, or `yes` to allow delete-category tools to run server-side (default: blocked) |
 
 ### MCP Configuration
 
-All tools are registered with the MCP client. Disable risky tools in your MCP client config rather than hiding them server-side — this keeps them visible in the editor so you can enable them when needed.
+1. **`disabledTools`** in your MCP client config — keeps delete tools out of the agent's tool list by default, but they remain visible in the editor so you can enable them when needed.
+2. **`PLANKA_ALLOW_DESTRUCTION`** — server-side fallback that rejects delete-category tool calls even if the client enables them.
 
 ```json
 {
@@ -48,8 +82,7 @@ All tools are registered with the MCP client. Disable risky tools in your MCP cl
       "args": ["@filcuk/planka-mcp"],
       "env": {
         "PLANKA_BASE_URL": "https://planka.example.com",
-        "PLANKA_AGENT_EMAIL": "agent@example.com",
-        "PLANKA_AGENT_PASSWORD": "your-password"
+        "PLANKA_API_KEY": "your-api-key"
       },
       "disabledTools": [
         "planka_clear_custom_field_value",
@@ -74,6 +107,10 @@ All tools are registered with the MCP client. Disable risky tools in your MCP cl
 ```
 
 Remove tools from `disabledTools` to enable them for your agent.
+
+**Credential fallback** — omit `PLANKA_API_KEY` and set `PLANKA_AGENT_EMAIL` / `PLANKA_AGENT_PASSWORD` instead. The server will log in automatically and accept terms on first use when required.
+
+**Enabling deletes** — remove delete tools from `disabledTools` *and* set `PLANKA_ALLOW_DESTRUCTION=true` in the MCP server env.
 
 ## Available Tools
 

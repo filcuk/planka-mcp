@@ -3,7 +3,6 @@
  */
 import {
   PlankaAuthError,
-  PlankaConfigError,
   PlankaNetworkError,
   createPlankaError,
 } from "./errors.js";
@@ -12,51 +11,10 @@ import {
   extractTermsAcceptancePayload,
   isTermsAcceptanceRequired,
 } from "./lib/terms-auth.js";
-
-interface ClientConfig {
-  baseUrl: string;
-  email: string;
-  password: string;
-  termsLanguage: string;
-}
+import { ClientConfig, loadClientConfig } from "./config/client-config.js";
 
 /**
- * Validates and returns the configuration from environment variables.
- */
-function getConfig(): ClientConfig {
-  const baseUrl = process.env.PLANKA_BASE_URL;
-  const email = process.env.PLANKA_AGENT_EMAIL;
-  const password = process.env.PLANKA_AGENT_PASSWORD;
-
-  const missing: string[] = [];
-  if (!baseUrl) missing.push("PLANKA_BASE_URL");
-  if (!email) missing.push("PLANKA_AGENT_EMAIL");
-  if (!password) missing.push("PLANKA_AGENT_PASSWORD");
-
-  if (missing.length > 0) {
-    throw new PlankaConfigError(
-      `Missing required environment variables: ${missing.join(", ")}`
-    );
-  }
-
-  // Validate URL format
-  try {
-    new URL(baseUrl!);
-  } catch {
-    throw new PlankaConfigError(`Invalid PLANKA_BASE_URL: ${baseUrl}`);
-  }
-
-  // TypeScript narrowing: after the check above, these are guaranteed to be defined
-  return {
-    baseUrl: baseUrl!.replace(/\/$/, ""), // Remove trailing slash
-    email: email!,
-    password: password!,
-    termsLanguage: process.env.PLANKA_TERMS_LANGUAGE?.trim() || "en-US",
-  };
-}
-
-/**
- * PLANKA API client with automatic JWT token management.
+ * PLANKA API client with API key or JWT authentication.
  */
 class PlankaClient {
   private config: ClientConfig | null = null;
@@ -68,7 +26,7 @@ class PlankaClient {
    */
   private getConfig(): ClientConfig {
     if (!this.config) {
-      this.config = getConfig();
+      this.config = loadClientConfig();
     }
     return this.config;
   }
@@ -78,18 +36,50 @@ class PlankaClient {
 
   /**
    * Creates an AbortSignal with timeout.
-   * Uses AbortSignal.timeout() which automatically cleans up when the request completes.
    */
   private createTimeoutSignal(): AbortSignal {
     return AbortSignal.timeout(PlankaClient.REQUEST_TIMEOUT_MS);
   }
 
   /**
-   * Authenticates and retrieves a new JWT token.
+   * Headers for /api/* requests.
+   */
+  private async getApiAuthHeaders(): Promise<Record<string, string>> {
+    const config = this.getConfig();
+
+    if (config.authMode === "apiKey") {
+      return { "X-Api-Key": config.apiKey! };
+    }
+
+    const token = await this.getToken();
+    return { Authorization: `Bearer ${token}` };
+  }
+
+  /**
+   * Headers for attachment download routes (/attachments/*).
+   */
+  private async getDownloadAuthHeaders(): Promise<Record<string, string>> {
+    const config = this.getConfig();
+
+    if (config.authMode === "apiKey") {
+      return { "X-Api-Key": config.apiKey! };
+    }
+
+    const token = await this.getToken();
+    return { Cookie: `accessToken=${token}` };
+  }
+
+  /**
+   * Authenticates with email/password and retrieves a JWT token.
    * Automatically accepts terms when required (first login for new users).
    */
   private async authenticate(): Promise<string> {
     const config = this.getConfig();
+
+    if (config.authMode !== "credentials") {
+      throw new PlankaAuthError("Credential authentication is not configured");
+    }
+
     const url = `${config.baseUrl}/api/access-tokens`;
 
     let response: Response;
@@ -236,9 +226,13 @@ class PlankaClient {
   }
 
   /**
-   * Gets a valid token, refreshing if necessary.
+   * Gets a valid JWT token for credential auth, refreshing if necessary.
    */
   private async getToken(): Promise<string> {
+    if (this.getConfig().authMode === "apiKey") {
+      throw new PlankaAuthError("JWT tokens are not used with API key auth");
+    }
+
     if (!this.token || Date.now() >= this.tokenExpiresAt) {
       return this.authenticate();
     }
@@ -256,9 +250,22 @@ class PlankaClient {
     }
   }
 
+  private shouldRetryAuth(status: number, isRetry: boolean): boolean {
+    return (
+      status === 401 &&
+      !isRetry &&
+      this.getConfig().authMode === "credentials" &&
+      Boolean(this.token)
+    );
+  }
+
+  private invalidateToken(): void {
+    this.token = null;
+    this.tokenExpiresAt = 0;
+  }
+
   /**
    * Makes an authenticated request to the PLANKA API.
-   * @param isRetry - Internal flag to prevent infinite retry loops on 401
    */
   private async request<T>(
     method: string,
@@ -267,11 +274,11 @@ class PlankaClient {
     isRetry = false
   ): Promise<T> {
     const config = this.getConfig();
-    const token = await this.getToken();
+    const authHeaders = await this.getApiAuthHeaders();
     const url = `${config.baseUrl}${path}`;
 
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${token}`,
+      ...authHeaders,
     };
 
     if (body !== undefined) {
@@ -293,7 +300,6 @@ class PlankaClient {
       throw new PlankaNetworkError(`Network error: ${method} ${path}`, error);
     }
 
-    // Handle 204 No Content
     if (response.status === 204) {
       return undefined as T;
     }
@@ -301,10 +307,8 @@ class PlankaClient {
     const data = await this.safeParseJson(response);
 
     if (!response.ok) {
-      // If token expired and this is not already a retry, get fresh token and retry once
-      if (response.status === 401 && this.token && !isRetry) {
-        this.token = null;
-        this.tokenExpiresAt = 0;
+      if (this.shouldRetryAuth(response.status, isRetry)) {
+        this.invalidateToken();
         return this.request(method, path, body, true);
       }
       throw createPlankaError(response.status, data, `${method} ${path}`);
@@ -313,37 +317,22 @@ class PlankaClient {
     return data as T;
   }
 
-  /**
-   * GET request.
-   */
   async get<T>(path: string): Promise<T> {
     return this.request<T>("GET", path);
   }
 
-  /**
-   * POST request.
-   */
   async post<T>(path: string, body: unknown): Promise<T> {
     return this.request<T>("POST", path, body);
   }
 
-  /**
-   * PATCH request.
-   */
   async patch<T>(path: string, body: unknown): Promise<T> {
     return this.request<T>("PATCH", path, body);
   }
 
-  /**
-   * POST request with multipart form data (no Content-Type header — fetch sets boundary).
-   */
   async postForm<T>(path: string, formData: FormData): Promise<T> {
     return this.requestForm<T>("POST", path, formData);
   }
 
-  /**
-   * Makes an authenticated multipart request.
-   */
   private async requestForm<T>(
     method: string,
     path: string,
@@ -351,16 +340,14 @@ class PlankaClient {
     isRetry = false
   ): Promise<T> {
     const config = this.getConfig();
-    const token = await this.getToken();
+    const authHeaders = await this.getApiAuthHeaders();
     const url = `${config.baseUrl}${path}`;
 
     let response: Response;
     try {
       response = await fetch(url, {
         method,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        headers: authHeaders,
         body: formData,
         signal: this.createTimeoutSignal(),
       });
@@ -378,9 +365,8 @@ class PlankaClient {
     const data = await this.safeParseJson(response);
 
     if (!response.ok) {
-      if (response.status === 401 && this.token && !isRetry) {
-        this.token = null;
-        this.tokenExpiresAt = 0;
+      if (this.shouldRetryAuth(response.status, isRetry)) {
+        this.invalidateToken();
         return this.requestForm(method, path, formData, true);
       }
       throw createPlankaError(response.status, data, `${method} ${path}`);
@@ -389,31 +375,25 @@ class PlankaClient {
     return data as T;
   }
 
-  /**
-   * DELETE request.
-   */
   async delete(path: string): Promise<void> {
     return this.request<void>("DELETE", path);
   }
 
   /**
    * Download binary content from non-API routes (e.g. file attachments).
-   * Planka authenticates these via the accessToken cookie, not Bearer auth.
    */
   async getBinary(
     path: string,
     isRetry = false
   ): Promise<{ data: Buffer; contentType?: string }> {
     const config = this.getConfig();
-    const token = await this.getToken();
+    const authHeaders = await this.getDownloadAuthHeaders();
     const url = `${config.baseUrl}${path}`;
 
     let response: Response;
     try {
       response = await fetch(url, {
-        headers: {
-          Cookie: `accessToken=${token}`,
-        },
+        headers: authHeaders,
         signal: this.createTimeoutSignal(),
       });
     } catch (error) {
@@ -424,9 +404,8 @@ class PlankaClient {
     }
 
     if (!response.ok) {
-      if (response.status === 401 && this.token && !isRetry) {
-        this.token = null;
-        this.tokenExpiresAt = 0;
+      if (this.shouldRetryAuth(response.status, isRetry)) {
+        this.invalidateToken();
         return this.getBinary(path, true);
       }
 
@@ -444,5 +423,4 @@ class PlankaClient {
   }
 }
 
-// Singleton client instance
 export const plankaClient = new PlankaClient();
