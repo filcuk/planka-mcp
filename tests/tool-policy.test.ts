@@ -1,8 +1,18 @@
-import { describe, expect, it } from "vitest";
-import { allTools, getToolDefinitions } from "../src/tools/index.js";
-import { getDefaultDisabledToolNames } from "../src/config/tool-policy.js";
+import { describe, expect, it, afterEach } from "vitest";
+import { allTools, getToolDefinitions, resolveToolCall } from "../src/tools/index.js";
+import {
+  getDefaultDisabledToolNames,
+  isDeleteToolBlocked,
+  isDestructionAllowed,
+} from "../src/config/tool-policy.js";
+
+const ENV_KEY = "PLANKA_ALLOW_DESTRUCTION";
 
 describe("tool policy", () => {
+  afterEach(() => {
+    delete process.env[ENV_KEY];
+  });
+
   it("advertises all tools via listTools", () => {
     const definitions = getToolDefinitions();
     expect(definitions.length).toBe(allTools.length);
@@ -19,6 +29,42 @@ describe("tool policy", () => {
     expect(disabled).toContain("planka_delete_board");
     expect(disabled).not.toContain("planka_create_card");
     expect(disabled).not.toContain("planka_get_board");
+  });
+
+  it("blocks delete tools server-side by default", () => {
+    delete process.env[ENV_KEY];
+
+    const blocked = resolveToolCall("planka_delete_card");
+    expect(blocked).toEqual({
+      error:
+        'Delete tool "planka_delete_card" is blocked server-side. Set PLANKA_ALLOW_DESTRUCTION=true to enable destructive actions.',
+    });
+
+    const allowed = resolveToolCall("planka_create_card");
+    expect(allowed).toHaveProperty("tool");
+  });
+
+  it("allows delete tools when PLANKA_ALLOW_DESTRUCTION is set", () => {
+    process.env[ENV_KEY] = "true";
+
+    const result = resolveToolCall("planka_delete_card");
+    expect(result).toHaveProperty("tool");
+  });
+
+  it("parses truthy destruction env values", () => {
+    expect(isDestructionAllowed({ PLANKA_ALLOW_DESTRUCTION: "true" })).toBe(true);
+    expect(isDestructionAllowed({ PLANKA_ALLOW_DESTRUCTION: "1" })).toBe(true);
+    expect(isDestructionAllowed({ PLANKA_ALLOW_DESTRUCTION: "yes" })).toBe(true);
+    expect(isDestructionAllowed({})).toBe(false);
+    expect(isDestructionAllowed({ PLANKA_ALLOW_DESTRUCTION: "false" })).toBe(false);
+  });
+
+  it("blocks only delete-category tools", () => {
+    delete process.env[ENV_KEY];
+
+    for (const tool of allTools) {
+      expect(isDeleteToolBlocked(tool)).toBe(tool.category === "delete");
+    }
   });
 });
 
