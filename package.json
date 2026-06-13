@@ -19,7 +19,8 @@
     "test:run": "vitest run",
     "lint": "tsc --noEmit",
     "prepublishOnly": "npm run build",
-    "publish:github": "npm publish --registry=https://npm.pkg.github.com"
+    "publish:npm": "npm publish",
+    "publish:github": "npm publish --registry=https://npm.pkg.github.com --@filcuk:registry=https://npm.pkg.github.com"
   },
   "keywords": [
     "mcp",
@@ -37,7 +38,8 @@
     "url": "https://github.com/filcuk/planka-mcp.git"
   },
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "engines": {
     "node": ">=18.0.0"

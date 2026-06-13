@@ -1,6 +1,10 @@
 # Copy to ~/.npmrc (or a local .npmrc) when publishing to GitHub Packages.
 # Do not commit a file that contains your token.
 #
+# If @filcuk:registry points at GitHub, plain `npm publish` would go to GitHub
+# for scoped packages. This repo sets publishConfig.registry in package.json so
+# `npm publish` / `npm run publish:npm` target npmjs.org; use publish:github for GitHub.
+#
 # Create a classic PAT at https://github.com/settings/tokens with:
 #   read:packages, write:packages, repo (repo only if the GitHub repo is private)
 
