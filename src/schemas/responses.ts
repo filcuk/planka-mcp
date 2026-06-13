@@ -15,6 +15,12 @@ import {
   UserSchema,
   CardLabelSchema,
   AttachmentSchema,
+  CardMembershipSchema,
+  BoardMembershipSchema,
+  CustomFieldGroupSchema,
+  CustomFieldSchema,
+  CustomFieldValueSchema,
+  ActionSchema,
 } from "./entities.js";
 
 // Generic response wrappers
@@ -59,6 +65,17 @@ export const NotificationResponse = SingleItemResponse(NotificationSchema);
 export const NotificationsResponse = MultiItemResponse(NotificationSchema);
 
 export const CardLabelResponse = SingleItemResponse(CardLabelSchema);
+export const CardMembershipResponse = SingleItemResponse(CardMembershipSchema);
+export const BoardMembershipResponse = SingleItemResponse(BoardMembershipSchema);
+
+export const AttachmentResponse = SingleItemResponse(AttachmentSchema);
+
+export const CustomFieldValueResponse = SingleItemResponse(
+  CustomFieldValueSchema
+);
+
+export const ActionResponse = SingleItemResponse(ActionSchema);
+export const ActionsResponse = MultiItemResponse(ActionSchema);
 
 // Auth response
 export const AuthResponse = z.object({
@@ -72,11 +89,17 @@ export const BoardIncludedSchema = z
     cards: z.array(CardSchema).optional(),
     labels: z.array(LabelSchema).optional(),
     cardLabels: z.array(CardLabelSchema).optional(),
+    cardMemberships: z.array(CardMembershipSchema).optional(),
+    boardMemberships: z.array(BoardMembershipSchema).optional(),
     taskLists: z.array(TaskListSchema).optional(),
     tasks: z.array(TaskSchema).optional(),
     users: z.array(UserSchema).optional(),
+    attachments: z.array(AttachmentSchema).optional(),
+    customFieldGroups: z.array(CustomFieldGroupSchema).optional(),
+    customFields: z.array(CustomFieldSchema).optional(),
+    customFieldValues: z.array(CustomFieldValueSchema).optional(),
   })
-  .passthrough(); // Allow additional fields
+  .passthrough();
 
 // Included entities schema for card details
 export const CardIncludedSchema = z
@@ -86,8 +109,12 @@ export const CardIncludedSchema = z
     comments: z.array(CommentSchema).optional(),
     labels: z.array(LabelSchema).optional(),
     cardLabels: z.array(CardLabelSchema).optional(),
+    cardMemberships: z.array(CardMembershipSchema).optional(),
     attachments: z.array(AttachmentSchema).optional(),
     users: z.array(UserSchema).optional(),
+    customFieldGroups: z.array(CustomFieldGroupSchema).optional(),
+    customFields: z.array(CustomFieldSchema).optional(),
+    customFieldValues: z.array(CustomFieldValueSchema).optional(),
   })
   .passthrough();
 

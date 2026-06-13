@@ -10,7 +10,7 @@ alwaysApply: true
 
 - You are strictly locked to Planka board ID `YOUR_BOARD_ID` (`YOUR_BOARD_NAME`).
 - Never read, update, or interact with any other board IDs.
-- Always pass `BOARD_ID` when a Planka tool accepts `boardId` (e.g. `planka_get_board`, `planka_manage_labels`).
+- Always pass `BOARD_ID` when a Planka tool accepts `boardId` (e.g. `planka_get_board`, `planka_modify_labels`).
 
 Resolve lists and cards with `planka_get_board` using `boardId: "YOUR_BOARD_ID"` before creating or mutating cards. Do not call `planka_get_structure` unless you need to locate this board within a project.
 
@@ -42,8 +42,9 @@ Adjust this section to match your team's policy. The defaults below are conserva
 
 Never create, change, or delete labels under any circumstances. Do not call:
 
-- `planka_manage_labels`
-- `planka_set_card_labels`
+- `planka_modify_labels`
+- `planka_add_card_labels`
+- `planka_remove_card_labels`
 - `labelIds` on `planka_create_card`
 
 Reading labels via `planka_get_board` or `planka_get_card` is allowed.
@@ -54,9 +55,24 @@ Never delete boards, lists, cards, tasks or comments. Do not call:
 
 - `planka_delete_card`
 - `planka_delete_task`
-- `planka_manage_lists` with action `delete`
+- `planka_delete_task_list`
+- `planka_delete_list`
+- `planka_delete_comment`
+- `planka_delete_label`
+- `planka_remove_card_labels`
+- `planka_remove_card_members`
+- `planka_clear_custom_field_value`
+- `planka_delete_attachment`
+- `planka_delete_board_member`
+- `planka_delete_project`
+- `planka_delete_board`
 
-Do not use any tool action that removes boards, lists, cards, or tasks.
+Do not create or restructure projects or boards. Do not call:
+
+- `planka_modify_projects`
+- `planka_modify_boards`
+
+Do not use any tool that removes boards, lists, cards, tasks, comments, labels, members, or attachments.
 
 ## Card placement
 

@@ -12,7 +12,6 @@ import {
   AddLabelToCardInput,
 } from "../schemas/requests.js";
 import { LabelResponse, CardLabelResponse } from "../schemas/responses.js";
-import { getCard } from "./cards.js";
 
 /**
  * Create a new label on a board.
@@ -78,28 +77,14 @@ export async function addLabelToCard(input: AddLabelToCardInput): Promise<CardLa
 
 /**
  * Remove a label from a card.
- * Uses PLANKA 2.0 /card-labels endpoint.
- *
- * Note: We need the cardLabelId (the junction record ID), not the labelId.
- * This function finds the correct cardLabelId from the card's existing labels.
+ * Uses PLANKA 2.0 labelId path segment (no junction lookup).
  */
 export async function removeLabelFromCard(
   cardId: string,
   labelId: string
 ): Promise<void> {
-  // Get the card to find the cardLabel record
-  const cardDetails = await getCard(cardId);
-  const cardLabel = cardDetails.cardLabels.find(
-    (cl) => cl.labelId === labelId
-  );
-
-  if (!cardLabel) {
-    // Label not on card, nothing to remove
-    return;
-  }
-
   await plankaClient.delete(
-    `/api/cards/${cardId}/card-labels/${cardLabel.id}`
+    `/api/cards/${cardId}/card-labels/labelId:${labelId}`
   );
 }
 

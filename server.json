@@ -6,12 +6,12 @@
     "url": "https://github.com/filcuk/planka-mcp",
     "source": "github"
   },
-  "version": "1.1.0",
+  "version": "1.3.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "@filcuk/planka-mcp",
-      "version": "1.1.0",
+      "version": "1.3.0",
       "transport": {
         "type": "stdio"
       },
@@ -24,18 +24,46 @@
           "isSecret": false
         },
         {
+          "name": "PLANKA_API_KEY",
+          "description": "Agent API key for X-Api-Key authentication (recommended). Falls back to email/password when unset.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        },
+        {
           "name": "PLANKA_AGENT_EMAIL",
-          "description": "Email/username for PLANKA authentication",
-          "isRequired": true,
+          "description": "Email/username for credential authentication when PLANKA_API_KEY is not set",
+          "isRequired": false,
           "format": "string",
           "isSecret": false
         },
         {
           "name": "PLANKA_AGENT_PASSWORD",
-          "description": "Password for PLANKA authentication",
-          "isRequired": true,
+          "description": "Password for credential authentication when PLANKA_API_KEY is not set",
+          "isRequired": false,
           "format": "string",
           "isSecret": true
+        },
+        {
+          "name": "PLANKA_TERMS_LANGUAGE",
+          "description": "Language code for automatic terms acceptance on first credential login (default: en-US)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "PLANKA_ALLOW_DESTRUCTION",
+          "description": "Set to true, 1, or yes to allow delete-category tools to execute server-side",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "PLANKA_MAX_ATTACHMENT_MB",
+          "description": "Maximum file attachment upload/download size in megabytes (default: 15)",
+          "isRequired": false,
+          "format": "number",
+          "isSecret": false
         }
       ]
     }
