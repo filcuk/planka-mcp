@@ -36,4 +36,16 @@ npm run publish:github
 git push && git push --tags
 ```
 
-Alternatively, create a GitHub Release to trigger the GitHub Packages workflow.
+Alternatively, create a GitHub Release (or run the **Publish** workflow manually) to publish to **npm** and **GitHub Packages** via CI.
+
+## CI publish (GitHub Actions)
+
+The **Publish** workflow (`.github/workflows/publish.yml`) runs on release and `workflow_dispatch`. It publishes to both registries after `npm ci` and tests pass.
+
+Add an npm **Automation** token as a repository secret:
+
+1. [npmjs.com → Access Tokens](https://www.npmjs.com/settings/~tokens) → **Generate New Token** → **Granular Access Token** (or Classic **Automation**).
+2. Grant **Read and write** for the `@filcuk` scope (or this package).
+3. GitHub repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret** → name: `NPM_TOKEN`, value: the token.
+
+GitHub Packages uses the built-in `GITHUB_TOKEN` (no extra secret). If `NPM_TOKEN` is missing, the npm publish step fails.
