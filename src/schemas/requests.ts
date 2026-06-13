@@ -174,10 +174,22 @@ export const CreateFileAttachmentSchema = z.object({
 });
 export type CreateFileAttachmentInput = z.input<typeof CreateFileAttachmentSchema>;
 
-export const UpdateAttachmentSchema = z.object({
-  name: z.string().min(1),
-});
+export const UpdateAttachmentSchema = z
+  .object({
+    name: z.string().min(1).optional(),
+    url: z.string().url("Valid URL required").optional(),
+  })
+  .refine((value) => value.name !== undefined || value.url !== undefined, {
+    message: "At least one of name or url is required",
+  });
 export type UpdateAttachmentInput = z.input<typeof UpdateAttachmentSchema>;
+
+export const DownloadAttachmentSchema = z.object({
+  cardId: z.string(),
+  attachmentId: z.string(),
+  includeContent: z.boolean().optional(),
+});
+export type DownloadAttachmentInput = z.input<typeof DownloadAttachmentSchema>;
 
 // Custom field value requests
 export const SetCustomFieldValueSchema = z.object({

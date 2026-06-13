@@ -10,7 +10,7 @@ Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/plan
 - **Optimized** for agent workflows: combined operations, sensible defaults
 - **Safe-by-default**: all tools are advertised; risky tools are disabled in the default MCP client config via `disabledTools`
 - **Automatic terms acceptance** on first login when the Planka instance requires it
-- **39 tools** covering cards, tasks, labels, comments, lists, notifications, members, attachments, custom fields, projects, boards, and discovery
+- **40 tools** covering cards, tasks, labels, comments, lists, notifications, members, attachments, custom fields, projects, boards, and discovery
 - Includes example agent rules
 
 ## Setup
@@ -162,7 +162,8 @@ The **Default** column reflects recommended client-side settings. Delete and pro
 
 | Tool | Description | Default |
 |------|-------------|---------|
-| `planka_modify_attachments` | Create or update link/file attachments | On |
+| `planka_get_attachment` | Get attachment metadata; download file content as base64 (max 5 MB) | On |
+| `planka_modify_attachments` | Create or update link/file attachments (including link URL updates) | On |
 | `planka_delete_attachment` | Delete an attachment | Off |
 
 ### Custom Fields

@@ -7,10 +7,16 @@ import {
   UpdateTaskListSchema,
   SearchCardsSchema,
   CreateFileAttachmentSchema,
+  UpdateAttachmentSchema,
+  DownloadAttachmentSchema,
 } from "../src/schemas/requests.js";
 import { CardSchema, StopwatchSchema } from "../src/schemas/entities.js";
 import { resolveCustomFieldIds } from "../src/lib/custom-fields.js";
-import { getAttachmentUrl } from "../src/lib/attachments.js";
+import {
+  buildAttachmentDownloadPath,
+  getAttachmentFilename,
+  getAttachmentUrl,
+} from "../src/lib/attachments.js";
 import { decodeBase64ToBlob } from "../src/operations/attachments.js";
 
 describe("CreateCardSchema", () => {
@@ -202,5 +208,71 @@ describe("getAttachmentUrl", () => {
       createdAt: "2024-01-01T00:00:00.000Z",
     });
     expect(url).toBe("https://example.com/doc");
+  });
+
+  it("extracts download URL from file attachments", () => {
+    const url = getAttachmentUrl({
+      id: "att-2",
+      cardId: "card-1",
+      type: "file",
+      data: {
+        url: "https://planka.example.com/attachments/att-2/download/report.pdf",
+        filename: "report.pdf",
+      },
+      name: "Report",
+      createdAt: "2024-01-01T00:00:00.000Z",
+    });
+    expect(url).toContain("/attachments/att-2/download/report.pdf");
+  });
+});
+
+describe("UpdateAttachmentSchema", () => {
+  it("accepts name-only updates", () => {
+    const parsed = UpdateAttachmentSchema.parse({ name: "Renamed" });
+    expect(parsed.name).toBe("Renamed");
+  });
+
+  it("accepts url-only updates", () => {
+    const parsed = UpdateAttachmentSchema.parse({
+      url: "https://example.com/new",
+    });
+    expect(parsed.url).toBe("https://example.com/new");
+  });
+
+  it("requires at least one field", () => {
+    expect(() => UpdateAttachmentSchema.parse({})).toThrow();
+  });
+});
+
+describe("attachment download helpers", () => {
+  const fileAttachment = {
+    id: "att-2",
+    cardId: "card-1",
+    type: "file" as const,
+    data: {
+      filename: "report.pdf",
+      url: "https://planka.example.com/attachments/att-2/download/report.pdf",
+    },
+    name: "Report",
+    createdAt: "2024-01-01T00:00:00.000Z",
+  };
+
+  it("reads filename from file attachment data", () => {
+    expect(getAttachmentFilename(fileAttachment)).toBe("report.pdf");
+  });
+
+  it("builds authenticated download path", () => {
+    expect(buildAttachmentDownloadPath(fileAttachment)).toBe(
+      "/attachments/att-2/download/report.pdf"
+    );
+  });
+
+  it("parses download attachment input", () => {
+    const parsed = DownloadAttachmentSchema.parse({
+      cardId: "card-1",
+      attachmentId: "att-2",
+      includeContent: true,
+    });
+    expect(parsed.includeContent).toBe(true);
   });
 });

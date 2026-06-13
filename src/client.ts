@@ -395,6 +395,53 @@ class PlankaClient {
   async delete(path: string): Promise<void> {
     return this.request<void>("DELETE", path);
   }
+
+  /**
+   * Download binary content from non-API routes (e.g. file attachments).
+   * Planka authenticates these via the accessToken cookie, not Bearer auth.
+   */
+  async getBinary(
+    path: string,
+    isRetry = false
+  ): Promise<{ data: Buffer; contentType?: string }> {
+    const config = this.getConfig();
+    const token = await this.getToken();
+    const url = `${config.baseUrl}${path}`;
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        headers: {
+          Cookie: `accessToken=${token}`,
+        },
+        signal: this.createTimeoutSignal(),
+      });
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new PlankaNetworkError(`Request timeout: GET ${path}`, error);
+      }
+      throw new PlankaNetworkError(`Network error: GET ${path}`, error);
+    }
+
+    if (!response.ok) {
+      if (response.status === 401 && this.token && !isRetry) {
+        this.token = null;
+        this.tokenExpiresAt = 0;
+        return this.getBinary(path, true);
+      }
+
+      const data = await this.safeParseJson(response);
+      throw createPlankaError(response.status, data, `GET ${path}`);
+    }
+
+    const arrayBuffer = await response.arrayBuffer();
+    const contentType = response.headers.get("content-type") ?? undefined;
+
+    return {
+      data: Buffer.from(arrayBuffer),
+      contentType,
+    };
+  }
 }
 
 // Singleton client instance
