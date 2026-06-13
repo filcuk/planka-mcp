@@ -4,10 +4,9 @@ node_modules/
 # Build output
 dist/
 
-# Environment
+# Environment (tokens belong in ~/.npmrc, not here — project .npmrc only sets scope registry)
 .env
 .env.local
-.npmrc
 
 # IDE
 .vscode/

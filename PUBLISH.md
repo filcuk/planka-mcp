@@ -18,9 +18,16 @@ Log in and publish:
 
 ```bash
 npm login                    # npmjs.com
-npm publish                  # npm
-npm run publish:github       # GitHub Packages — needs ~/.npmrc; see .npmrc.example
+npm publish                  # npm (from this repo directory — see registry note)
+npm run publish:github       # GitHub Packages — needs GitHub token in ~/.npmrc; see .npmrc.example
 ```
+
+### Registry note
+
+If your `~/.npmrc` sets `@filcuk:registry=https://npm.pkg.github.com`, scoped packages normally publish to GitHub — even with `npm publish` and no flags. This repo includes a project `.npmrc` that sets `@filcuk:registry=https://registry.npmjs.org`, so from this directory:
+
+- `npm publish` or `npm run publish:npm` → **npm**
+- `npm run publish:github` → **GitHub Packages**
 
 ## New version
 
