@@ -2,17 +2,24 @@
  * Membership tools for PLANKA MCP server.
  */
 import { getBoardMembers } from "../operations/boards.js";
-import { setCardMembers } from "../operations/memberships.js";
+import { addCardMember, removeCardMember } from "../operations/memberships.js";
 import { PlankaError } from "../errors.js";
+import { defineTool } from "./types.js";
 
-/**
- * Tool: planka_get_board_members
- * List users with access to a board.
- */
-export const getBoardMembersTool = {
+function handleError(error: unknown) {
+  if (error instanceof PlankaError) {
+    return {
+      content: [{ type: "text" as const, text: `Error: ${error.message}` }],
+      isError: true,
+    };
+  }
+  throw error;
+}
+
+export const getBoardMembersTool = defineTool("read", {
   name: "planka_get_board_members",
   description:
-    "List board members (users with access). Use this to find user IDs for assigning people to cards.",
+    "List board members with roles and membership IDs. Use this to find user IDs for assigning people to cards or boards.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -44,24 +51,14 @@ export const getBoardMembersTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_set_card_members
- * Add or remove members on a card.
- */
-export const setCardMembersTool = {
-  name: "planka_set_card_members",
-  description: "Add or remove users assigned to a card.",
+export const addCardMembersTool = defineTool("modify", {
+  name: "planka_add_card_members",
+  description: "Add users as members on a card.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -69,30 +66,28 @@ export const setCardMembersTool = {
         type: "string",
         description: "The card ID",
       },
-      addUserIds: {
+      userIds: {
         type: "array",
         items: { type: "string" },
         description: "User IDs to add as card members",
       },
-      removeUserIds: {
-        type: "array",
-        items: { type: "string" },
-        description: "User IDs to remove from the card",
-      },
     },
-    required: ["cardId"],
+    required: ["cardId", "userIds"],
   },
-  handler: async (params: {
-    cardId: string;
-    addUserIds?: string[];
-    removeUserIds?: string[];
-  }) => {
+  handler: async (params: { cardId: string; userIds: string[] }) => {
     try {
-      await setCardMembers(
-        params.cardId,
-        params.addUserIds,
-        params.removeUserIds
-      );
+      let added = 0;
+      for (const userId of params.userIds) {
+        try {
+          await addCardMember({ cardId: params.cardId, userId });
+          added++;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          if (!message.toLowerCase().includes("already")) {
+            throw error;
+          }
+        }
+      }
 
       return {
         content: [
@@ -102,8 +97,7 @@ export const setCardMembersTool = {
               {
                 success: true,
                 cardId: params.cardId,
-                membersAdded: params.addUserIds?.length || 0,
-                membersRemoved: params.removeUserIds?.length || 0,
+                membersAdded: added,
               },
               null,
               2
@@ -112,15 +106,63 @@ export const setCardMembersTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-export const membershipTools = [getBoardMembersTool, setCardMembersTool];
+export const removeCardMembersTool = defineTool("delete", {
+  name: "planka_remove_card_members",
+  description: "Remove users from a card.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      cardId: {
+        type: "string",
+        description: "The card ID",
+      },
+      userIds: {
+        type: "array",
+        items: { type: "string" },
+        description: "User IDs to remove from the card",
+      },
+    },
+    required: ["cardId", "userIds"],
+  },
+  handler: async (params: { cardId: string; userIds: string[] }) => {
+    try {
+      for (const userId of params.userIds) {
+        try {
+          await removeCardMember(params.cardId, userId);
+        } catch {
+          // Ignore if member not on card
+        }
+      }
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                success: true,
+                cardId: params.cardId,
+                membersRemoved: params.userIds.length,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+});
+
+export const membershipTools = [
+  getBoardMembersTool,
+  addCardMembersTool,
+  removeCardMembersTool,
+];

@@ -5,10 +5,11 @@ Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/plan
 
 ## Features
 
-- Most complete v2 API support
-- Type-safe with Zod validation
-- Optimized for agent workflows (combined operations, sensible defaults)
-- 25 tools covering cards, tasks, labels, comments, lists, notifications, members, attachments, custom fields, and discovery
+- **Most complete** v2 API support
+- **Type-safe** with Zod validation
+- **Optimized** for agent workflows: combined operations, sensible defaults
+- **Safe-by-default** tool gating: destructive tools start disabled
+- **35 tools** covering cards, tasks, labels, comments, lists, notifications, members, attachments, custom fields, and discovery
 
 ## Setup
 
@@ -31,6 +32,7 @@ npm install @filcuk/planka-mcp
 | `PLANKA_BASE_URL` | Yes | Your PLANKA server URL |
 | `PLANKA_AGENT_EMAIL` | Yes | Agent user email |
 | `PLANKA_AGENT_PASSWORD` | Yes | Agent user password |
+| `PLANKA_ENABLE_DESTRUCTIVE` | No | Set to `true`, `1`, or `yes` to enable delete-category tools |
 
 ### MCP Configuration
 
@@ -52,123 +54,107 @@ npm install @filcuk/planka-mcp
 
 ## Available Tools
 
+Delete-category tools are disabled unless `PLANKA_ENABLE_DESTRUCTIVE=true` is set in the MCP server env.
+
 ### Navigation
 
-| Tool | Description |
-|------|-------------|
-| `planka_get_structure` | Get projects, boards, and lists hierarchy |
-| `planka_get_board` | Get a board with cards, labels, members, and custom fields |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_get_structure` | Get projects, boards, and lists hierarchy | On |
+| `planka_get_board` | Get a board with cards, labels, members, and custom fields | On |
 
 ### Cards
 
-| Tool | Description |
-|------|-------------|
-| `planka_create_card` | Create a card (optionally with tasks) |
-| `planka_update_card` | Update card properties |
-| `planka_move_card` | Move card to different list/position |
-| `planka_get_card` | Get card details with tasks, comments, members, attachments |
-| `planka_delete_card` | Delete a card |
-| `planka_search_cards` | Search/filter cards in a list |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_create_card` | Create a card (optionally with tasks) | On |
+| `planka_update_card` | Update card properties, subscription, stopwatch | On |
+| `planka_move_card` | Move card to different list/position | On |
+| `planka_get_card` | Get card details with tasks, comments, members, attachments | On |
+| `planka_search_cards` | Search/filter cards in a list (with cursor pagination) | On |
+| `planka_delete_card` | Delete a card | Off |
 
 ### Tasks
 
-| Tool | Description |
-|------|-------------|
-| `planka_create_tasks` | Add tasks (checklist items) to a card |
-| `planka_update_task` | Update task name, completion, position, or assignee |
-| `planka_delete_task` | Delete a task |
-| `planka_manage_task_lists` | Create or delete named checklists on a card |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_create_tasks` | Add tasks (checklist items) to a card | On |
+| `planka_update_task` | Update task name, completion, position, assignee, linked card | On |
+| `planka_modify_task_lists` | Create or update named checklists on a card | On |
+| `planka_delete_task` | Delete a task | Off |
+| `planka_delete_task_list` | Delete a checklist and all its tasks | Off |
 
 ### Labels
 
-| Tool | Description |
-|------|-------------|
-| `planka_manage_labels` | Create/update/delete board labels |
-| `planka_set_card_labels` | Add/remove labels from a card |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_modify_labels` | Create or update board labels | On |
+| `planka_add_card_labels` | Add labels to a card | On |
+| `planka_delete_label` | Delete a board label | Off |
+| `planka_remove_card_labels` | Remove labels from a card | Off |
 
 ### Comments
 
-| Tool | Description |
-|------|-------------|
-| `planka_add_comment` | Add a comment to a card |
-| `planka_get_comments` | Get all comments on a card |
-| `planka_manage_comments` | Update or delete a comment |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_add_comment` | Add a comment to a card | On |
+| `planka_get_comments` | Get all comments on a card | On |
+| `planka_modify_comment` | Update a comment | On |
+| `planka_delete_comment` | Delete a comment | Off |
 
 ### Notifications
 
-| Tool | Description |
-|------|-------------|
-| `planka_get_notifications` | Get unread notifications for the agent user |
-| `planka_mark_notifications_read` | Mark one or all notifications as read |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_get_notifications` | Get unread notifications for the agent user | On |
+| `planka_mark_notifications_read` | Mark one or all notifications as read | On |
 
 ### Lists
 
-| Tool | Description |
-|------|-------------|
-| `planka_manage_lists` | Create/update/delete lists |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_modify_lists` | Create or update lists | On |
+| `planka_delete_list` | Delete a list | Off |
 
 ### Members
 
-| Tool | Description |
-|------|-------------|
-| `planka_get_board_members` | List board users (for assigning to cards) |
-| `planka_set_card_members` | Add/remove users on a card |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_get_board_members` | List board users with roles and membership IDs | On |
+| `planka_add_card_members` | Add users to a card | On |
+| `planka_modify_board_members` | Add or update board memberships | On |
+| `planka_remove_card_members` | Remove users from a card | Off |
+| `planka_delete_board_member` | Remove a user from a board | Off |
 
 ### Attachments
 
-| Tool | Description |
-|------|-------------|
-| `planka_manage_attachments` | Create/update/delete link attachments |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_modify_attachments` | Create or update link/file attachments | On |
+| `planka_delete_attachment` | Delete an attachment | Off |
 
 ### Custom Fields
 
-| Tool | Description |
-|------|-------------|
-| `planka_set_custom_field_values` | Set or clear custom field values by name |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_set_custom_field_value` | Set a custom field value by name | On |
+| `planka_clear_custom_field_value` | Clear a custom field value | Off |
 
 ### Discovery
 
-| Tool | Description |
-|------|-------------|
-| `planka_get_actions` | Get activity history for a board or card |
+| Tool | Description | Default |
+|------|-------------|---------|
+| `planka_get_actions` | Get activity history for a board or card | On |
 
-## Usage Examples
+## Examples
 
-### Get board structure
-
-```
-Use planka_get_structure to see all projects and boards
-```
-
-### Create a card with tasks
-
-```
-Use planka_create_card with:
-- listId: "abc123"
-- name: "Implement feature X"
-- tasks: ["Research", "Design", "Implement", "Test"]
-```
-
-### Move card through workflow
-
-```
-Use planka_move_card to move card from "To Do" to "In Progress"
-```
-
-### Check for @mentions
-
-```
-Use planka_get_notifications with types: ["mentionInComment"] to see unread mentions
-```
-
-## Cursor rules (agent scope)
+### Cursor rules
 
 Agents work best with explicit guardrails: which board to use, what they must not delete, and how cards should be placed. Copy the example rule into your project and customize the placeholders.
 
 1. Copy [`examples/cursor-rule-planka-scope.mdc`](./examples/cursor-rule-planka-scope.mdc) to `.cursor/rules/` in the workspace where you use Planka.
 2. Replace `YOUR_BOARD_ID`, `YOUR_BOARD_NAME`, and `YOUR_MCP_SERVER` with your values (find the board ID via `planka_get_structure` or `planka_get_board`).
 3. Adjust the **Forbidden actions** and **Card placement** sections to match your workflow.
-
 
 ## Development
 
@@ -177,19 +163,11 @@ Agents work best with explicit guardrails: which board to use, what they must no
 git clone https://github.com/filcuk/planka-mcp.git
 cd planka-mcp
 
-# Install
+# Run
 npm install
-
-# Build
 npm run build
-
-# Test
 npm test
 ```
-
-## License
-
-MIT
 
 ## Links
 
@@ -197,4 +175,3 @@ MIT
 - [PLANKA Swagger](https://plankanban.github.io/planka/swagger-ui/swagger.json) - API reference
 - [MCP SDK](https://github.com/modelcontextprotocol/sdk) - Model Context Protocol
 - [Design Document](./DESIGN.md) - Technical design details
-- [Cursor rule example](./examples/cursor-rule-planka-scope.mdc) - Agent scope and guardrails template

@@ -4,6 +4,7 @@
 import { getStructure } from "../operations/projects.js";
 import { getBoardWithTaskCounts } from "../operations/boards.js";
 import { formatCustomFields } from "../lib/custom-fields.js";
+import { defineTool } from "./types.js";
 
 function isSystemList(type: string): boolean {
   return type === "archive" || type === "trash";
@@ -23,7 +24,7 @@ function shouldIncludeList(
  * Tool: planka_get_structure
  * Get the full project/board/list hierarchy.
  */
-export const getStructureTool = {
+export const getStructureTool = defineTool("read", {
   name: "planka_get_structure",
   description:
     "Get the full project/board/list structure. Use this to understand what projects and boards exist before working with cards.",
@@ -74,13 +75,13 @@ export const getStructureTool = {
       ],
     };
   },
-};
+});
 
 /**
  * Tool: planka_get_board
  * Get a board with all its lists, cards, and labels.
  */
-export const getBoardTool = {
+export const getBoardTool = defineTool("read", {
   name: "planka_get_board",
   description:
     "Get a board with all its lists, cards, labels, members, and custom field values.",
@@ -247,6 +248,6 @@ export const getBoardTool = {
       ],
     };
   },
-};
+});
 
 export const navigationTools = [getStructureTool, getBoardTool];

@@ -8,6 +8,7 @@ import {
 } from "../operations/notifications.js";
 import { NotificationType } from "../schemas/entities.js";
 import { PlankaError } from "../errors.js";
+import { defineTool } from "./types.js";
 
 const NOTIFICATION_TYPE_DESCRIPTION =
   "Filter by notification type. Omit to return all unread notifications.";
@@ -41,7 +42,7 @@ function formatNotificationData(data: Record<string, unknown>) {
  * Tool: planka_get_notifications
  * Get unread notifications for the agent user.
  */
-export const getNotificationsTool = {
+export const getNotificationsTool = defineTool("read", {
   name: "planka_get_notifications",
   description:
     "Get unread notifications for the agent user. Use this to see @mentions, new comments, card moves, and card membership changes. Returns only unread notifications.",
@@ -96,13 +97,13 @@ export const getNotificationsTool = {
       throw error;
     }
   },
-};
+});
 
 /**
  * Tool: planka_mark_notifications_read
  * Mark one or all notifications as read.
  */
-export const markNotificationsReadTool = {
+export const markNotificationsReadTool = defineTool("modify", {
   name: "planka_mark_notifications_read",
   description:
     "Mark notifications as read after handling them. Pass notificationId for one notification, or markAll=true to clear the entire inbox.",
@@ -182,6 +183,6 @@ export const markNotificationsReadTool = {
       throw error;
     }
   },
-};
+});
 
 export const notificationTools = [getNotificationsTool, markNotificationsReadTool];

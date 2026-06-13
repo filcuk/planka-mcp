@@ -6,15 +6,22 @@ import {
   clearCustomFieldValue,
 } from "../operations/custom-fields.js";
 import { PlankaError } from "../errors.js";
+import { defineTool } from "./types.js";
 
-/**
- * Tool: planka_set_custom_field_values
- * Set or clear custom field values on a card by field name.
- */
-export const setCustomFieldValuesTool = {
-  name: "planka_set_custom_field_values",
+function handleError(error: unknown) {
+  if (error instanceof PlankaError) {
+    return {
+      content: [{ type: "text" as const, text: `Error: ${error.message}` }],
+      isError: true,
+    };
+  }
+  throw error;
+}
+
+export const setCustomFieldValueTool = defineTool("modify", {
+  name: "planka_set_custom_field_value",
   description:
-    "Set or clear custom field values on a card. Use field names from planka_get_card or planka_get_board output.",
+    "Set a custom field value on a card. Use field names from planka_get_card or planka_get_board output.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -27,8 +34,8 @@ export const setCustomFieldValuesTool = {
         description: "Custom field name (case-insensitive)",
       },
       value: {
-        type: ["string", "null"],
-        description: "Field value to set, or null to clear",
+        type: "string",
+        description: "Field value to set",
       },
     },
     required: ["cardId", "fieldName", "value"],
@@ -36,34 +43,9 @@ export const setCustomFieldValuesTool = {
   handler: async (params: {
     cardId: string;
     fieldName: string;
-    value: string | null;
+    value: string;
   }) => {
     try {
-      if (params.value === null) {
-        await clearCustomFieldValue({
-          cardId: params.cardId,
-          fieldName: params.fieldName,
-        });
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  success: true,
-                  cardId: params.cardId,
-                  fieldName: params.fieldName,
-                  cleared: true,
-                },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      }
-
       const fieldValue = await setCustomFieldValue({
         cardId: params.cardId,
         fieldName: params.fieldName,
@@ -90,15 +72,59 @@ export const setCustomFieldValuesTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-export const customFieldTools = [setCustomFieldValuesTool];
+export const clearCustomFieldValueTool = defineTool("delete", {
+  name: "planka_clear_custom_field_value",
+  description: "Clear a custom field value on a card.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      cardId: {
+        type: "string",
+        description: "The card ID",
+      },
+      fieldName: {
+        type: "string",
+        description: "Custom field name (case-insensitive)",
+      },
+    },
+    required: ["cardId", "fieldName"],
+  },
+  handler: async (params: { cardId: string; fieldName: string }) => {
+    try {
+      await clearCustomFieldValue({
+        cardId: params.cardId,
+        fieldName: params.fieldName,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                success: true,
+                cardId: params.cardId,
+                fieldName: params.fieldName,
+                cleared: true,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+});
+
+export const customFieldTools = [
+  setCustomFieldValueTool,
+  clearCustomFieldValueTool,
+];

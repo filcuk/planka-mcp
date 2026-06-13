@@ -12,12 +12,19 @@ import { createTasks } from "../operations/tasks.js";
 import { addLabelToCard } from "../operations/labels.js";
 import { formatCardDetails } from "../lib/format-card.js";
 import { PlankaError } from "../errors.js";
+import { defineTool } from "./types.js";
 
-/**
- * Tool: planka_create_card
- * Create a new card on a board.
- */
-export const createCardTool = {
+function handleError(error: unknown) {
+  if (error instanceof PlankaError) {
+    return {
+      content: [{ type: "text" as const, text: `Error: ${error.message}` }],
+      isError: true,
+    };
+  }
+  throw error;
+}
+
+export const createCardTool = defineTool("modify", {
   name: "planka_create_card",
   description:
     "Create a new card on a board. Optionally add tasks (checklist items) at the same time.",
@@ -41,6 +48,10 @@ export const createCardTool = {
         type: "string",
         description: "Card description (markdown supported)",
       },
+      position: {
+        type: "number",
+        description: "Position in the list (lower = higher; default: end of list)",
+      },
       tasks: {
         type: "array",
         items: { type: "string" },
@@ -63,6 +74,7 @@ export const createCardTool = {
     name: string;
     type?: "project" | "story";
     description?: string;
+    position?: number;
     tasks?: string[];
     dueDate?: string;
     labelIds?: string[];
@@ -73,6 +85,7 @@ export const createCardTool = {
         name: params.name,
         type: params.type,
         description: params.description,
+        position: params.position,
         dueDate: params.dueDate,
       });
 
@@ -108,6 +121,7 @@ export const createCardTool = {
                   name: card.name,
                   listId: card.listId,
                   type: card.type,
+                  position: card.position,
                 },
                 tasksCreated: params.tasks?.length || 0,
                 labelsAttached,
@@ -120,22 +134,12 @@ export const createCardTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_get_card
- * Get full details of a card.
- */
-export const getCardTool = {
+export const getCardTool = defineTool("read", {
   name: "planka_get_card",
   description:
     "Get full details of a card including tasks, comments, labels, attachments, members, and custom fields.",
@@ -162,25 +166,15 @@ export const getCardTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_update_card
- * Update a card's properties.
- */
-export const updateCardTool = {
+export const updateCardTool = defineTool("modify", {
   name: "planka_update_card",
   description:
-    "Update a card's properties (name, description, due date, closed state, cover attachment).",
+    "Update a card's properties (name, description, due date, closed state, subscription, stopwatch, cover attachment).",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -208,6 +202,19 @@ export const updateCardTool = {
         type: "boolean",
         description: "Mark card as closed/open",
       },
+      isSubscribed: {
+        type: "boolean",
+        description: "Subscribe or unsubscribe the current user to card updates",
+      },
+      stopwatch: {
+        type: ["object", "null"],
+        description:
+          "Time tracking state: { startedAt: ISO string, total: seconds }. Pass null to clear.",
+        properties: {
+          startedAt: { type: "string" },
+          total: { type: "number" },
+        },
+      },
       type: {
         type: "string",
         enum: ["project", "story"],
@@ -227,6 +234,8 @@ export const updateCardTool = {
     dueDate?: string | null;
     isDueCompleted?: boolean | null;
     isClosed?: boolean;
+    isSubscribed?: boolean;
+    stopwatch?: { startedAt: string; total: number } | null;
     type?: "project" | "story";
     coverAttachmentId?: string | null;
   }) => {
@@ -243,6 +252,10 @@ export const updateCardTool = {
         filteredUpdates.isDueCompleted = updates.isDueCompleted;
       if (updates.isClosed !== undefined)
         filteredUpdates.isClosed = updates.isClosed;
+      if (updates.isSubscribed !== undefined)
+        filteredUpdates.isSubscribed = updates.isSubscribed;
+      if (updates.stopwatch !== undefined)
+        filteredUpdates.stopwatch = updates.stopwatch;
       if (updates.type !== undefined) filteredUpdates.type = updates.type;
       if (updates.coverAttachmentId !== undefined)
         filteredUpdates.coverAttachmentId = updates.coverAttachmentId;
@@ -263,6 +276,8 @@ export const updateCardTool = {
                   dueDate: card.dueDate,
                   isDueCompleted: card.isDueCompleted,
                   isClosed: card.isClosed,
+                  isSubscribed: card.isSubscribed,
+                  stopwatch: card.stopwatch,
                   coverAttachmentId: card.coverAttachmentId,
                 },
               },
@@ -273,22 +288,12 @@ export const updateCardTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_move_card
- * Move a card to a different list or position.
- */
-export const moveCardTool = {
+export const moveCardTool = defineTool("modify", {
   name: "planka_move_card",
   description:
     "Move a card to a different list or position. Use this for workflow transitions (e.g., 'To Do' -> 'In Progress').",
@@ -350,22 +355,12 @@ export const moveCardTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_delete_card
- * Permanently delete a card.
- */
-export const deleteCardTool = {
+export const deleteCardTool = defineTool("delete", {
   name: "planka_delete_card",
   description: "Permanently delete a card. This cannot be undone.",
   inputSchema: {
@@ -398,16 +393,10 @@ export const deleteCardTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
 export const cardTools = [
   createCardTool,

@@ -7,6 +7,8 @@ import {
   LabelColorSchema,
   ListColorSchema,
   ListTypeSchema,
+  StopwatchSchema,
+  BoardRoleSchema,
 } from "./entities.js";
 
 // Card requests
@@ -17,6 +19,7 @@ export const CreateCardSchema = z.object({
   position: z.number().optional().default(65536),
   type: CardTypeSchema.optional().default("project"),
   dueDate: z.string().optional(),
+  stopwatch: StopwatchSchema.optional(),
 });
 export type CreateCardInput = z.input<typeof CreateCardSchema>;
 
@@ -26,6 +29,8 @@ export const UpdateCardSchema = z.object({
   dueDate: z.string().nullable().optional(),
   isDueCompleted: z.boolean().nullable().optional(),
   isClosed: z.boolean().optional(),
+  isSubscribed: z.boolean().optional(),
+  stopwatch: StopwatchSchema.nullable().optional(),
   type: CardTypeSchema.optional(),
   coverAttachmentId: z.string().nullable().optional(),
   listId: z.string().optional(),
@@ -55,6 +60,7 @@ export const UpdateTaskSchema = z.object({
   isCompleted: z.boolean().optional(),
   position: z.number().optional(),
   assigneeUserId: z.string().nullable().optional(),
+  linkedCardId: z.string().nullable().optional(),
 });
 export type UpdateTaskInput = z.input<typeof UpdateTaskSchema>;
 
@@ -75,6 +81,14 @@ export const CreateTaskListSchema = z.object({
   position: z.number().optional().default(65536),
 });
 export type CreateTaskListInput = z.input<typeof CreateTaskListSchema>;
+
+export const UpdateTaskListSchema = z.object({
+  name: z.string().min(1).optional(),
+  position: z.number().optional(),
+  showOnFrontOfCard: z.boolean().optional(),
+  hideCompletedTasks: z.boolean().optional(),
+});
+export type UpdateTaskListInput = z.input<typeof UpdateTaskListSchema>;
 
 // Label requests
 export const CreateLabelSchema = z.object({
@@ -128,6 +142,7 @@ export type CreateListInput = z.input<typeof CreateListSchema>;
 export const UpdateListSchema = z.object({
   name: z.string().min(1).optional(),
   position: z.number().optional(),
+  type: ListTypeSchema.optional(),
   color: ListColorSchema.nullable().optional(),
 });
 export type UpdateListInput = z.input<typeof UpdateListSchema>;
@@ -139,6 +154,25 @@ export const CreateLinkAttachmentSchema = z.object({
   url: z.string().url("Valid URL required"),
 });
 export type CreateLinkAttachmentInput = z.input<typeof CreateLinkAttachmentSchema>;
+
+const MAX_FILE_ATTACHMENT_BYTES = 5 * 1024 * 1024;
+
+export const CreateFileAttachmentSchema = z.object({
+  cardId: z.string(),
+  name: z.string().min(1, "Attachment name required"),
+  fileBase64: z
+    .string()
+    .min(1, "fileBase64 required")
+    .refine((value) => {
+      try {
+        return Buffer.from(value, "base64").length <= MAX_FILE_ATTACHMENT_BYTES;
+      } catch {
+        return false;
+      }
+    }, `File exceeds ${MAX_FILE_ATTACHMENT_BYTES / (1024 * 1024)} MB limit`),
+  mimeType: z.string().optional(),
+});
+export type CreateFileAttachmentInput = z.input<typeof CreateFileAttachmentSchema>;
 
 export const UpdateAttachmentSchema = z.object({
   name: z.string().min(1),
@@ -172,5 +206,22 @@ export const SearchCardsSchema = z.object({
   search: z.string().optional(),
   labelIds: z.array(z.string()).optional(),
   userIds: z.array(z.string()).optional(),
+  beforeListChangedAt: z.string().optional(),
+  beforeId: z.string().optional(),
 });
 export type SearchCardsInput = z.input<typeof SearchCardsSchema>;
+
+// Board membership requests
+export const CreateBoardMembershipSchema = z.object({
+  boardId: z.string(),
+  userId: z.string(),
+  role: BoardRoleSchema,
+  canComment: z.boolean().optional(),
+});
+export type CreateBoardMembershipInput = z.input<typeof CreateBoardMembershipSchema>;
+
+export const UpdateBoardMembershipSchema = z.object({
+  role: BoardRoleSchema.optional(),
+  canComment: z.boolean().optional(),
+});
+export type UpdateBoardMembershipInput = z.input<typeof UpdateBoardMembershipSchema>;

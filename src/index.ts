@@ -11,7 +11,7 @@ import {
   CallToolRequestSchema,
   ListToolsRequestSchema,
 } from "@modelcontextprotocol/sdk/types.js";
-import { getToolDefinitions, getTool } from "./tools/index.js";
+import { getToolDefinitions, resolveToolCall } from "./tools/index.js";
 import { PlankaError, PlankaConfigError } from "./errors.js";
 
 /**
@@ -22,7 +22,7 @@ async function main() {
   const server = new Server(
     {
       name: "planka-mcp",
-      version: "1.2.0",
+      version: "1.3.0",
     },
     {
       capabilities: {
@@ -42,19 +42,15 @@ async function main() {
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
 
-    const tool = getTool(name);
-    if (!tool) {
+    const resolved = resolveToolCall(name);
+    if ("error" in resolved) {
       return {
-        content: [
-          {
-            type: "text",
-            text: `Unknown tool: ${name}`,
-          },
-        ],
+        content: [{ type: "text", text: resolved.error }],
         isError: true,
       };
     }
 
+    const { tool } = resolved;
     try {
       const result = await tool.handler(args || {});
       return result;

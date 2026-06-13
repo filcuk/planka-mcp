@@ -16,6 +16,7 @@ import {
   CardLabelSchema,
   AttachmentSchema,
   CardMembershipSchema,
+  BoardMembershipSchema,
   CustomFieldGroupSchema,
   CustomFieldSchema,
   CustomFieldValueSchema,
@@ -65,6 +66,7 @@ export const NotificationsResponse = MultiItemResponse(NotificationSchema);
 
 export const CardLabelResponse = SingleItemResponse(CardLabelSchema);
 export const CardMembershipResponse = SingleItemResponse(CardMembershipSchema);
+export const BoardMembershipResponse = SingleItemResponse(BoardMembershipSchema);
 
 export const AttachmentResponse = SingleItemResponse(AttachmentSchema);
 
@@ -88,6 +90,7 @@ export const BoardIncludedSchema = z
     labels: z.array(LabelSchema).optional(),
     cardLabels: z.array(CardLabelSchema).optional(),
     cardMemberships: z.array(CardMembershipSchema).optional(),
+    boardMemberships: z.array(BoardMembershipSchema).optional(),
     taskLists: z.array(TaskListSchema).optional(),
     tasks: z.array(TaskSchema).optional(),
     users: z.array(UserSchema).optional(),

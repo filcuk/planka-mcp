@@ -121,6 +121,13 @@ export const ListSchema = z.object({
 });
 export type List = z.infer<typeof ListSchema>;
 
+// Stopwatch schema (time tracking on cards)
+export const StopwatchSchema = z.object({
+  startedAt: z.string(),
+  total: z.number(),
+});
+export type Stopwatch = z.infer<typeof StopwatchSchema>;
+
 // Card schema
 export const CardSchema = z.object({
   id: z.string(),
@@ -134,6 +141,9 @@ export const CardSchema = z.object({
   dueDate: z.string().nullable().optional(),
   isDueCompleted: z.boolean().nullable().optional(),
   isClosed: z.boolean().optional(),
+  isSubscribed: z.boolean().optional(),
+  stopwatch: StopwatchSchema.nullable().optional(),
+  listChangedAt: z.string().optional(),
   coverAttachmentId: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
@@ -147,6 +157,7 @@ export const TaskListSchema = z.object({
   name: z.string(),
   position: z.number(),
   showOnFrontOfCard: z.boolean().optional(),
+  hideCompletedTasks: z.boolean().optional(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
 });
@@ -160,6 +171,7 @@ export const TaskSchema = z.object({
   position: z.number(),
   isCompleted: z.boolean(),
   assigneeUserId: z.string().nullable().optional(),
+  linkedCardId: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
 });
@@ -239,6 +251,21 @@ export const AttachmentSchema = z.object({
   updatedAt: z.string().nullable().optional(),
 });
 export type Attachment = z.infer<typeof AttachmentSchema>;
+
+// Board membership schema
+export const BoardRoleSchema = z.enum(["editor", "viewer"]);
+export type BoardRole = z.infer<typeof BoardRoleSchema>;
+
+export const BoardMembershipSchema = z.object({
+  id: z.string(),
+  boardId: z.string(),
+  userId: z.string(),
+  role: BoardRoleSchema,
+  canComment: z.boolean().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable().optional(),
+});
+export type BoardMembership = z.infer<typeof BoardMembershipSchema>;
 
 // Card membership schema
 export const CardMembershipSchema = z.object({

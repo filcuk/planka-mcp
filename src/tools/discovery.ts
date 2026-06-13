@@ -5,12 +5,19 @@ import { getActions } from "../operations/actions.js";
 import { searchCards } from "../operations/cards.js";
 import { formatCardDetails } from "../lib/format-card.js";
 import { PlankaError } from "../errors.js";
+import { defineTool } from "./types.js";
 
-/**
- * Tool: planka_get_actions
- * Get activity history for a board or card.
- */
-export const getActionsTool = {
+function handleError(error: unknown) {
+  if (error instanceof PlankaError) {
+    return {
+      content: [{ type: "text" as const, text: `Error: ${error.message}` }],
+      isError: true,
+    };
+  }
+  throw error;
+}
+
+export const getActionsTool = defineTool("read", {
   name: "planka_get_actions",
   description:
     "Get activity history (moves, member changes, task completions) for a board or card.",
@@ -78,25 +85,15 @@ export const getActionsTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_search_cards
- * Search and filter cards in a list.
- */
-export const searchCardsTool = {
+export const searchCardsTool = defineTool("read", {
   name: "planka_search_cards",
   description:
-    "Search cards in a list by text, labels, or assigned users. Useful for large boards.",
+    "Search cards in a list by text, labels, or assigned users. Supports cursor pagination for endless lists — pass nextCursor values from a previous response as beforeListChangedAt and beforeId.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -118,6 +115,16 @@ export const searchCardsTool = {
         items: { type: "string" },
         description: "Filter by member or task assignee user IDs",
       },
+      beforeListChangedAt: {
+        type: "string",
+        description:
+          "Pagination cursor — listChangedAt of the last card from previous page (requires beforeId)",
+      },
+      beforeId: {
+        type: "string",
+        description:
+          "Pagination cursor — id of the last card from previous page (requires beforeListChangedAt)",
+      },
     },
     required: ["listId"],
   },
@@ -126,14 +133,42 @@ export const searchCardsTool = {
     search?: string;
     labelIds?: string[];
     userIds?: string[];
+    beforeListChangedAt?: string;
+    beforeId?: string;
   }) => {
     try {
+      if (
+        (params.beforeListChangedAt && !params.beforeId) ||
+        (!params.beforeListChangedAt && params.beforeId)
+      ) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "Error: beforeListChangedAt and beforeId must be provided together",
+            },
+          ],
+          isError: true,
+        };
+      }
+
       const results = await searchCards({
         listId: params.listId,
         search: params.search,
         labelIds: params.labelIds,
         userIds: params.userIds,
+        beforeListChangedAt: params.beforeListChangedAt,
+        beforeId: params.beforeId,
       });
+
+      const lastCard = results.length > 0 ? results[results.length - 1].card : null;
+      const nextCursor =
+        lastCard?.listChangedAt && lastCard.id
+          ? {
+              beforeListChangedAt: lastCard.listChangedAt,
+              beforeId: lastCard.id,
+            }
+          : undefined;
 
       return {
         content: [
@@ -143,10 +178,12 @@ export const searchCardsTool = {
               {
                 listId: params.listId,
                 matchCount: results.length,
+                ...(nextCursor && { nextCursor }),
                 cards: results.map((details) => ({
                   id: details.card.id,
                   name: details.card.name,
                   listId: details.card.listId,
+                  listChangedAt: details.card.listChangedAt,
                   labels: formatCardDetails(details).labels,
                   members: formatCardDetails(details).members,
                 })),
@@ -158,15 +195,9 @@ export const searchCardsTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
 export const discoveryTools = [getActionsTool, searchCardsTool];

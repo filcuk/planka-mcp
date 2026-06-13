@@ -60,6 +60,7 @@ export async function createCard(input: CreateCardInput): Promise<Card> {
       position: validated.position,
       type: validated.type,
       dueDate: validated.dueDate,
+      stopwatch: validated.stopwatch,
     }
   );
 
@@ -159,6 +160,10 @@ export async function searchCards(input: SearchCardsInput): Promise<CardDetails[
   }
   if (validated.userIds && validated.userIds.length > 0) {
     params.set("userIds", validated.userIds.join(","));
+  }
+  if (validated.beforeListChangedAt && validated.beforeId) {
+    params.set("before[listChangedAt]", validated.beforeListChangedAt);
+    params.set("before[id]", validated.beforeId);
   }
 
   const query = params.toString();

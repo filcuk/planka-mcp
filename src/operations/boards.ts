@@ -8,6 +8,7 @@ import {
   Card,
   Label,
   CardLabel,
+  BoardMembership,
   TaskList,
   Task,
   User,
@@ -28,6 +29,7 @@ export interface BoardDetails {
   labels: Label[];
   cardLabels: CardLabel[];
   cardMemberships: CardMembership[];
+  boardMemberships: BoardMembership[];
   taskLists: TaskList[];
   tasks: Task[];
   users: User[];
@@ -63,6 +65,7 @@ export async function getBoard(boardId: string): Promise<BoardDetails> {
     labels: (included.labels || []).sort((a, b) => a.position - b.position),
     cardLabels: included.cardLabels || [],
     cardMemberships: included.cardMemberships || [],
+    boardMemberships: included.boardMemberships || [],
     taskLists: (included.taskLists || []).sort((a, b) => a.position - b.position),
     tasks: included.tasks || [],
     users: included.users || [],
@@ -73,17 +76,42 @@ export async function getBoard(boardId: string): Promise<BoardDetails> {
 }
 
 /**
- * Get board members (users with board access).
+ * Board member with membership metadata.
+ */
+export interface BoardMemberInfo {
+  id: string;
+  name: string;
+  username?: string;
+  boardMembershipId: string;
+  role: "editor" | "viewer";
+  canComment?: boolean;
+}
+
+/**
+ * Get board members (users with board access and membership details).
  */
 export async function getBoardMembers(
   boardId: string
-): Promise<Pick<User, "id" | "name" | "username">[]> {
+): Promise<BoardMemberInfo[]> {
   const details = await getBoard(boardId);
-  return details.users.map((user) => ({
-    id: user.id,
-    name: user.name,
-    username: user.username,
-  }));
+  const membershipByUserId = new Map(
+    (details.boardMemberships || []).map((membership) => [
+      membership.userId,
+      membership,
+    ])
+  );
+
+  return details.users.map((user) => {
+    const membership = membershipByUserId.get(user.id);
+    return {
+      id: user.id,
+      name: user.name,
+      username: user.username,
+      boardMembershipId: membership?.id ?? "",
+      role: membership?.role ?? "viewer",
+      canComment: membership?.canComment,
+    };
+  });
 }
 
 /**

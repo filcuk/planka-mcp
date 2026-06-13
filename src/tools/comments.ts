@@ -8,12 +8,19 @@ import {
   deleteComment,
 } from "../operations/comments.js";
 import { PlankaError } from "../errors.js";
+import { defineTool } from "./types.js";
 
-/**
- * Tool: planka_add_comment
- * Add a comment to a card.
- */
-export const addCommentTool = {
+function handleError(error: unknown) {
+  if (error instanceof PlankaError) {
+    return {
+      content: [{ type: "text" as const, text: `Error: ${error.message}` }],
+      isError: true,
+    };
+  }
+  throw error;
+}
+
+export const addCommentTool = defineTool("modify", {
   name: "planka_add_comment",
   description:
     "Add a comment to a card. Use this for status updates, notes, or agent activity logs.",
@@ -58,22 +65,12 @@ export const addCommentTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_get_comments
- * Get all comments on a card.
- */
-export const getCommentsTool = {
+export const getCommentsTool = defineTool("read", {
   name: "planka_get_comments",
   description: "Get all comments on a card.",
   inputSchema: {
@@ -111,87 +108,74 @@ export const getCommentsTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_manage_comments
- * Update or delete comments on a card.
- */
-export const manageCommentsTool = {
-  name: "planka_manage_comments",
-  description: "Update or delete a comment on a card.",
+export const modifyCommentTool = defineTool("modify", {
+  name: "planka_modify_comment",
+  description: "Update a comment on a card.",
   inputSchema: {
     type: "object" as const,
     properties: {
-      action: {
-        type: "string",
-        enum: ["update", "delete"],
-        description: "Action to perform",
-      },
       commentId: {
         type: "string",
         description: "The comment ID",
       },
       text: {
         type: "string",
-        description: "New comment text (required for update)",
+        description: "New comment text",
       },
     },
-    required: ["action", "commentId"],
+    required: ["commentId", "text"],
   },
-  handler: async (params: {
-    action: "update" | "delete";
-    commentId: string;
-    text?: string;
-  }) => {
+  handler: async (params: { commentId: string; text: string }) => {
     try {
-      if (params.action === "update") {
-        if (!params.text) {
-          return {
-            content: [
+      const comment = await updateComment(params.commentId, {
+        text: params.text,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
               {
-                type: "text" as const,
-                text: "Error: text is required for update action",
-              },
-            ],
-            isError: true,
-          };
-        }
-
-        const comment = await updateComment(params.commentId, {
-          text: params.text,
-        });
-
-        return {
-          content: [
-            {
-              type: "text" as const,
-              text: JSON.stringify(
-                {
-                  success: true,
-                  comment: {
-                    id: comment.id,
-                    text: comment.text,
-                    updatedAt: comment.updatedAt,
-                  },
+                success: true,
+                comment: {
+                  id: comment.id,
+                  text: comment.text,
+                  updatedAt: comment.updatedAt,
                 },
-                null,
-                2
-              ),
-            },
-          ],
-        };
-      }
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+});
 
+export const deleteCommentTool = defineTool("delete", {
+  name: "planka_delete_comment",
+  description: "Delete a comment from a card.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      commentId: {
+        type: "string",
+        description: "The comment ID to delete",
+      },
+    },
+    required: ["commentId"],
+  },
+  handler: async (params: { commentId: string }) => {
+    try {
       await deleteComment(params.commentId);
 
       return {
@@ -210,19 +194,14 @@ export const manageCommentsTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
 export const commentTools = [
   addCommentTool,
   getCommentsTool,
-  manageCommentsTool,
+  modifyCommentTool,
+  deleteCommentTool,
 ];

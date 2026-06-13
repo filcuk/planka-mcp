@@ -3,26 +3,34 @@
  */
 import {
   createLinkAttachment,
+  createFileAttachment,
   updateAttachment,
   deleteAttachment,
 } from "../operations/attachments.js";
 import { getAttachmentUrl } from "../lib/attachments.js";
 import { PlankaError } from "../errors.js";
+import { defineTool } from "./types.js";
 
-/**
- * Tool: planka_manage_attachments
- * Create, update, or delete link attachments on a card.
- */
-export const manageAttachmentsTool = {
-  name: "planka_manage_attachments",
+function handleError(error: unknown) {
+  if (error instanceof PlankaError) {
+    return {
+      content: [{ type: "text" as const, text: `Error: ${error.message}` }],
+      isError: true,
+    };
+  }
+  throw error;
+}
+
+export const modifyAttachmentsTool = defineTool("modify", {
+  name: "planka_modify_attachments",
   description:
-    "Create, update, or delete link attachments on a card (URLs to docs, PRs, tickets, etc.).",
+    "Create or update attachments on a card. Prefer link attachments for URLs; use file type for small artifacts (base64, max 5 MB).",
   inputSchema: {
     type: "object" as const,
     properties: {
       action: {
         type: "string",
-        enum: ["create", "update", "delete"],
+        enum: ["create", "update"],
         description: "Action to perform",
       },
       cardId: {
@@ -31,7 +39,12 @@ export const manageAttachmentsTool = {
       },
       attachmentId: {
         type: "string",
-        description: "Attachment ID (required for update/delete)",
+        description: "Attachment ID (required for update)",
+      },
+      attachmentType: {
+        type: "string",
+        enum: ["link", "file"],
+        description: "Attachment type for create (default: link)",
       },
       name: {
         type: "string",
@@ -39,27 +52,52 @@ export const manageAttachmentsTool = {
       },
       url: {
         type: "string",
-        description: "Link URL (required for create)",
+        description: "Link URL (required for link type)",
+      },
+      fileBase64: {
+        type: "string",
+        description: "Base64-encoded file content (required for file type)",
+      },
+      mimeType: {
+        type: "string",
+        description: "MIME type for file attachments (optional)",
       },
     },
     required: ["action"],
   },
   handler: async (params: {
-    action: "create" | "update" | "delete";
+    action: "create" | "update";
     cardId?: string;
     attachmentId?: string;
+    attachmentType?: "link" | "file";
     name?: string;
     url?: string;
+    fileBase64?: string;
+    mimeType?: string;
   }) => {
     try {
-      switch (params.action) {
-        case "create": {
-          if (!params.cardId || !params.name || !params.url) {
+      if (params.action === "create") {
+        const attachmentType = params.attachmentType ?? "link";
+
+        if (!params.cardId || !params.name) {
+          return {
+            content: [
+              {
+                type: "text" as const,
+                text: "Error: cardId and name are required for create action",
+              },
+            ],
+            isError: true,
+          };
+        }
+
+        if (attachmentType === "link") {
+          if (!params.url) {
             return {
               content: [
                 {
                   type: "text" as const,
-                  text: "Error: cardId, name, and url are required for create action",
+                  text: "Error: url is required for link attachments",
                 },
               ],
               isError: true,
@@ -94,97 +132,123 @@ export const manageAttachmentsTool = {
           };
         }
 
-        case "update": {
-          if (!params.attachmentId || !params.name) {
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: "Error: attachmentId and name are required for update action",
-                },
-              ],
-              isError: true,
-            };
-          }
-
-          const attachment = await updateAttachment(params.attachmentId, {
-            name: params.name,
-          });
-
+        if (!params.fileBase64) {
           return {
             content: [
               {
                 type: "text" as const,
-                text: JSON.stringify(
-                  {
-                    success: true,
-                    attachment: {
-                      id: attachment.id,
-                      name: attachment.name,
-                      url: getAttachmentUrl(attachment),
-                    },
-                  },
-                  null,
-                  2
-                ),
-              },
-            ],
-          };
-        }
-
-        case "delete": {
-          if (!params.attachmentId) {
-            return {
-              content: [
-                {
-                  type: "text" as const,
-                  text: "Error: attachmentId is required for delete action",
-                },
-              ],
-              isError: true,
-            };
-          }
-
-          await deleteAttachment(params.attachmentId);
-
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: JSON.stringify(
-                  {
-                    success: true,
-                    message: `Attachment ${params.attachmentId} deleted`,
-                  },
-                  null,
-                  2
-                ),
-              },
-            ],
-          };
-        }
-
-        default:
-          return {
-            content: [
-              {
-                type: "text" as const,
-                text: `Error: Unknown action '${params.action}'`,
+                text: "Error: fileBase64 is required for file attachments",
               },
             ],
             isError: true,
           };
-      }
-    } catch (error) {
-      if (error instanceof PlankaError) {
+        }
+
+        const attachment = await createFileAttachment({
+          cardId: params.cardId,
+          name: params.name,
+          fileBase64: params.fileBase64,
+          mimeType: params.mimeType,
+        });
+
         return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
+          content: [
+            {
+              type: "text" as const,
+              text: JSON.stringify(
+                {
+                  success: true,
+                  attachment: {
+                    id: attachment.id,
+                    name: attachment.name,
+                    type: attachment.type,
+                  },
+                },
+                null,
+                2
+              ),
+            },
+          ],
+        };
+      }
+
+      if (!params.attachmentId || !params.name) {
+        return {
+          content: [
+            {
+              type: "text" as const,
+              text: "Error: attachmentId and name are required for update action",
+            },
+          ],
           isError: true,
         };
       }
-      throw error;
+
+      const attachment = await updateAttachment(params.attachmentId, {
+        name: params.name,
+      });
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                success: true,
+                attachment: {
+                  id: attachment.id,
+                  name: attachment.name,
+                  url: getAttachmentUrl(attachment),
+                },
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return handleError(error);
     }
   },
-};
+});
 
-export const attachmentTools = [manageAttachmentsTool];
+export const deleteAttachmentTool = defineTool("delete", {
+  name: "planka_delete_attachment",
+  description: "Delete an attachment from a card.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      attachmentId: {
+        type: "string",
+        description: "Attachment ID to delete",
+      },
+    },
+    required: ["attachmentId"],
+  },
+  handler: async (params: { attachmentId: string }) => {
+    try {
+      await deleteAttachment(params.attachmentId);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                success: true,
+                message: `Attachment ${params.attachmentId} deleted`,
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+});
+
+export const attachmentTools = [modifyAttachmentsTool, deleteAttachmentTool];

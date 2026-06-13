@@ -6,15 +6,23 @@ import {
   updateTask,
   deleteTask,
   createTaskList,
+  updateTaskList,
   deleteTaskList,
 } from "../operations/tasks.js";
 import { PlankaError } from "../errors.js";
+import { defineTool } from "./types.js";
 
-/**
- * Tool: planka_create_tasks
- * Add one or more tasks (checklist items) to a card.
- */
-export const createTasksTool = {
+function handleError(error: unknown) {
+  if (error instanceof PlankaError) {
+    return {
+      content: [{ type: "text" as const, text: `Error: ${error.message}` }],
+      isError: true,
+    };
+  }
+  throw error;
+}
+
+export const createTasksTool = defineTool("modify", {
   name: "planka_create_tasks",
   description: "Add one or more tasks (checklist items) to a card.",
   inputSchema: {
@@ -61,25 +69,15 @@ export const createTasksTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_update_task
- * Update a task's name or completion status.
- */
-export const updateTaskTool = {
+export const updateTaskTool = defineTool("modify", {
   name: "planka_update_task",
   description:
-    "Update a task's name, completion status, position, or assignee.",
+    "Update a task's name, completion status, position, assignee, or linked card.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -103,6 +101,10 @@ export const updateTaskTool = {
         type: ["string", "null"],
         description: "User ID to assign (null to unassign)",
       },
+      linkedCardId: {
+        type: ["string", "null"],
+        description: "Card ID to link this task to (null to unlink)",
+      },
     },
     required: ["taskId"],
   },
@@ -112,6 +114,7 @@ export const updateTaskTool = {
     isCompleted?: boolean;
     position?: number;
     assigneeUserId?: string | null;
+    linkedCardId?: string | null;
   }) => {
     try {
       const { taskId, ...updates } = params;
@@ -124,6 +127,8 @@ export const updateTaskTool = {
         filteredUpdates.position = updates.position;
       if (updates.assigneeUserId !== undefined)
         filteredUpdates.assigneeUserId = updates.assigneeUserId;
+      if (updates.linkedCardId !== undefined)
+        filteredUpdates.linkedCardId = updates.linkedCardId;
 
       const task = await updateTask(taskId, filteredUpdates);
 
@@ -140,6 +145,7 @@ export const updateTaskTool = {
                   isCompleted: task.isCompleted,
                   position: task.position,
                   assigneeUserId: task.assigneeUserId,
+                  linkedCardId: task.linkedCardId,
                 },
               },
               null,
@@ -149,22 +155,12 @@ export const updateTaskTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_delete_task
- * Delete a task from a card.
- */
-export const deleteTaskTool = {
+export const deleteTaskTool = defineTool("delete", {
   name: "planka_delete_task",
   description: "Delete a task from a card.",
   inputSchema: {
@@ -197,30 +193,21 @@ export const deleteTaskTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
-/**
- * Tool: planka_manage_task_lists
- * Create or delete task lists (checklists) on a card.
- */
-export const manageTaskListsTool = {
-  name: "planka_manage_task_lists",
-  description: "Create or delete named task lists (checklists) on a card.",
+export const modifyTaskListsTool = defineTool("modify", {
+  name: "planka_modify_task_lists",
+  description:
+    "Create or update named task lists (checklists) on a card.",
   inputSchema: {
     type: "object" as const,
     properties: {
       action: {
         type: "string",
-        enum: ["create", "delete"],
+        enum: ["create", "update"],
         description: "Action to perform",
       },
       cardId: {
@@ -229,7 +216,7 @@ export const manageTaskListsTool = {
       },
       taskListId: {
         type: "string",
-        description: "Task list ID (required for delete)",
+        description: "Task list ID (required for update)",
       },
       name: {
         type: "string",
@@ -239,15 +226,25 @@ export const manageTaskListsTool = {
         type: "number",
         description: "Task list position",
       },
+      showOnFrontOfCard: {
+        type: "boolean",
+        description: "Show checklist summary on card front",
+      },
+      hideCompletedTasks: {
+        type: "boolean",
+        description: "Hide completed tasks in the checklist",
+      },
     },
     required: ["action"],
   },
   handler: async (params: {
-    action: "create" | "delete";
+    action: "create" | "update";
     cardId?: string;
     taskListId?: string;
     name?: string;
     position?: number;
+    showOnFrontOfCard?: boolean;
+    hideCompletedTasks?: boolean;
   }) => {
     try {
       if (params.action === "create") {
@@ -295,13 +292,65 @@ export const manageTaskListsTool = {
           content: [
             {
               type: "text" as const,
-              text: "Error: taskListId is required for delete action",
+              text: "Error: taskListId is required for update action",
             },
           ],
           isError: true,
         };
       }
 
+      const updates: Record<string, unknown> = {};
+      if (params.name !== undefined) updates.name = params.name;
+      if (params.position !== undefined) updates.position = params.position;
+      if (params.showOnFrontOfCard !== undefined)
+        updates.showOnFrontOfCard = params.showOnFrontOfCard;
+      if (params.hideCompletedTasks !== undefined)
+        updates.hideCompletedTasks = params.hideCompletedTasks;
+
+      const taskList = await updateTaskList(params.taskListId, updates);
+
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify(
+              {
+                success: true,
+                taskList: {
+                  id: taskList.id,
+                  name: taskList.name,
+                  position: taskList.position,
+                  showOnFrontOfCard: taskList.showOnFrontOfCard,
+                  hideCompletedTasks: taskList.hideCompletedTasks,
+                },
+              },
+              null,
+              2
+            ),
+          },
+        ],
+      };
+    } catch (error) {
+      return handleError(error);
+    }
+  },
+});
+
+export const deleteTaskListTool = defineTool("delete", {
+  name: "planka_delete_task_list",
+  description: "Delete a task list (checklist) and all its tasks from a card.",
+  inputSchema: {
+    type: "object" as const,
+    properties: {
+      taskListId: {
+        type: "string",
+        description: "Task list ID to delete",
+      },
+    },
+    required: ["taskListId"],
+  },
+  handler: async (params: { taskListId: string }) => {
+    try {
       await deleteTaskList(params.taskListId);
 
       return {
@@ -320,20 +369,15 @@ export const manageTaskListsTool = {
         ],
       };
     } catch (error) {
-      if (error instanceof PlankaError) {
-        return {
-          content: [{ type: "text" as const, text: `Error: ${error.message}` }],
-          isError: true,
-        };
-      }
-      throw error;
+      return handleError(error);
     }
   },
-};
+});
 
 export const taskTools = [
   createTasksTool,
   updateTaskTool,
   deleteTaskTool,
-  manageTaskListsTool,
+  modifyTaskListsTool,
+  deleteTaskListTool,
 ];
