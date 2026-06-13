@@ -156,6 +156,16 @@ Use planka_move_card to move card from "To Do" to "In Progress"
 Use planka_get_notifications with types: ["mentionInComment"] to see unread mentions
 ```
 
+## Cursor rules (agent scope)
+
+Agents work best with explicit guardrails: which board to use, what they must not delete, and how cards should be placed. Copy the example rule into your project and customize the placeholders.
+
+1. Copy [`examples/cursor-rule-planka-scope.mdc`](./examples/cursor-rule-planka-scope.mdc) to `.cursor/rules/` in the workspace where you use Planka.
+2. Replace `YOUR_BOARD_ID`, `YOUR_BOARD_NAME`, and `YOUR_MCP_SERVER` with your values (find the board ID via `planka_get_structure` or `planka_get_board`).
+3. Adjust the **Forbidden actions** and **Card placement** sections to match your workflow.
+
+The example scopes the agent to a single board, requires MCP-only access, blocks label edits and deletes by default, and asks for confirmation before bulk changes.
+
 ## PLANKA 2.0 Compatibility
 
 This server is designed for PLANKA 2.0 and handles the API differences from 1.x:
@@ -191,3 +201,4 @@ MIT
 - [PLANKA Swagger](https://plankanban.github.io/planka/swagger-ui/swagger.json) - The kanban board
 - [MCP SDK](https://github.com/modelcontextprotocol/sdk) - Model Context Protocol
 - [Design Document](./DESIGN.md) - Technical design details
+- [Cursor rule example](./examples/cursor-rule-planka-scope.mdc) - Agent scope and guardrails template
