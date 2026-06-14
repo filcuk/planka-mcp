@@ -1,7 +1,7 @@
 # PLANKA MCP Server
 
-The most complete Model Context Protocol (MCP) server for [PLANKA](https://planka.app) kanban boards.
-Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/planka-mcp).
+The most complete Model Context Protocol (MCP) server for [PLANKA](https://planka.app) kanban boards.  
+Forked from [gogogadgetbytes/planka-mcp](https://github.com/gogogadgetbytes/planka-mcp).  
 
 ## Features
 
