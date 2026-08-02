@@ -90,7 +90,7 @@ export interface BoardMemberInfo {
   username?: string;
   boardMembershipId: string;
   role: "editor" | "viewer";
-  canComment?: boolean;
+  canComment?: boolean | null;
 }
 
 /**

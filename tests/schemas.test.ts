@@ -10,7 +10,11 @@ import {
   UpdateAttachmentSchema,
   DownloadAttachmentSchema,
 } from "../src/schemas/requests.js";
-import { CardSchema, StopwatchSchema } from "../src/schemas/entities.js";
+import {
+  BoardMembershipSchema,
+  CardSchema,
+  StopwatchSchema,
+} from "../src/schemas/entities.js";
 import { resolveCustomFieldIds } from "../src/lib/custom-fields.js";
 import {
   buildAttachmentDownloadPath,
@@ -89,6 +93,33 @@ describe("CardSchema", () => {
     expect(parsed.isClosed).toBe(true);
     expect(parsed.isDueCompleted).toBe(false);
     expect(parsed.listChangedAt).toBe("2024-01-02T00:00:00.000Z");
+  });
+});
+
+describe("BoardMembershipSchema", () => {
+  it("parses null canComment returned for editors", () => {
+    const parsed = BoardMembershipSchema.parse({
+      id: "membership-1",
+      boardId: "board-1",
+      userId: "user-1",
+      role: "editor",
+      canComment: null,
+      createdAt: "2024-01-01T00:00:00.000Z",
+      updatedAt: null,
+    });
+    expect(parsed.canComment).toBeNull();
+  });
+
+  it("parses boolean canComment returned for viewers", () => {
+    const parsed = BoardMembershipSchema.parse({
+      id: "membership-2",
+      boardId: "board-1",
+      userId: "user-2",
+      role: "viewer",
+      canComment: true,
+      createdAt: "2024-01-01T00:00:00.000Z",
+    });
+    expect(parsed.canComment).toBe(true);
   });
 });
 

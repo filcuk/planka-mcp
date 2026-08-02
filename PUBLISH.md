@@ -9,7 +9,7 @@ git clone https://github.com/filcuk/planka-mcp.git
 cd planka-mcp
 npm install
 npm run lint
-npm test
+npm run test:run
 ```
 
 Confirm `package.json` uses `@filcuk/planka-mcp` and `repository.url` points at `filcuk/planka-mcp` (not the upstream fork).
@@ -35,7 +35,7 @@ If your `~/.npmrc` sets `@filcuk:registry=https://npm.pkg.github.com`, scoped pa
 npm version patch            # or minor / major
 ```
 
-Also bump `server.json` and `src/index.ts` to the same version, then:
+Also bump `server.json` (top-level and each `packages[]` entry) and `SERVER_VERSION` in `src/server.ts` to the same version, then:
 
 ```bash
 npm publish

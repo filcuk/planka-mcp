@@ -1,12 +1,13 @@
 {
   "name": "@filcuk/planka-mcp",
-  "version": "1.3.2",
+  "version": "1.4.0",
   "mcpName": "io.github.filcuk/planka",
   "description": "MCP server for PLANKA kanban boards",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
-    "planka-mcp": "dist/index.js"
+    "planka-mcp": "dist/index.js",
+    "planka-mcp-http": "dist/http.js"
   },
   "files": [
     "dist"
@@ -15,6 +16,7 @@
     "build": "tsc",
     "dev": "tsc --watch",
     "start": "node dist/index.js",
+    "start:http": "node dist/http.js",
     "test": "vitest",
     "test:run": "vitest run",
     "lint": "tsc --noEmit",
@@ -45,7 +47,7 @@
     "node": ">=18.0.0"
   },
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.29.0",
     "zod": "^3.22.0"
   },
   "devDependencies": {

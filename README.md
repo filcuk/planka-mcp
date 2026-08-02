@@ -111,6 +111,65 @@ To rotate or revoke a key, use the same user management UI or update the user vi
 - **`PLANKA_ALLOW_DESTRUCTION`** controls server-side fallback that rejects delete-category tool calls even if the client enables them, unless explicitely allowed.
 - `PLANKA_API_KEY` is used by default with fallback on `PLANKA_AGENT_EMAIL` / `PLANKA_AGENT_PASSWORD`. The server will log in automatically and accept terms on first use when required.
 
+### Remote deployment (Docker)
+
+Run as a **remote MCP server** over Streamable HTTP. Local `npx` / stdio mode is unchanged.
+
+**Build and run:**
+
+```bash
+docker build -t planka-mcp .
+docker run -p 3000:3000 \
+  -e PLANKA_BASE_URL=https://planka.example.com \
+  -e PLANKA_API_KEY=your-api-key \
+  -e MCP_AUTH_TOKEN=your-mcp-auth-token \
+  planka-mcp
+```
+
+Or with Docker Compose (set variables in a `.env` file):
+
+```bash
+docker compose up --build
+```
+
+**HTTP environment variables:**
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `MCP_AUTH_TOKEN` | Yes | Bearer token clients must send to access `/mcp` |
+| `MCP_PORT` | No | Listen port (default: `3000`) |
+| `MCP_HOST` | No | Listen host (default: `0.0.0.0`) |
+| `MCP_PATH` | No | MCP endpoint path (default: `/mcp`) |
+
+`GET /health` returns `200` for container health checks and does not require auth.
+
+**Remote MCP client config:**
+
+```json
+{
+  "mcpServers": {
+    "planka": {
+      "url": "https://mcp.example.com/mcp",
+      "headers": {
+        "Authorization": "Bearer your-mcp-auth-token"
+      }
+    }
+  }
+}
+```
+
+Terminate TLS at a reverse proxy (nginx, Traefik, Caddy) in production. Do not expose the container directly on the public internet without HTTPS.
+
+**Run HTTP mode without Docker:**
+
+```bash
+npm install @filcuk/planka-mcp
+export PLANKA_BASE_URL=https://planka.example.com
+export PLANKA_API_KEY=your-api-key
+export MCP_AUTH_TOKEN=your-mcp-auth-token
+npx planka-mcp-http
+```
+
 ## Available Tools
 
 **Default** column: **On** = enabled in the default MCP client config; **Off** = disabled in `disabledTools` by default; **Blocked** = delete-category tool blocked server-side unless `PLANKA_ALLOW_DESTRUCTION=true` (also off in `disabledTools` by default).
@@ -245,3 +304,5 @@ npm start
 - [PLANKA Swagger](https://plankanban.github.io/planka/swagger-ui/swagger.json) - API reference
 - [MCP SDK](https://github.com/modelcontextprotocol/sdk) - Model Context Protocol
 - [Design Document](./DESIGN.md) - Technical design details
+- [AGENTS.md](./AGENTS.md) - Contributor and agent guide
+- [Publishing](./PUBLISH.md) - Release process
