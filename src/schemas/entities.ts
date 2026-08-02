@@ -261,7 +261,7 @@ export const BoardMembershipSchema = z.object({
   boardId: z.string(),
   userId: z.string(),
   role: BoardRoleSchema,
-  canComment: z.boolean().optional(),
+  canComment: z.boolean().nullable().optional(), // Null for editors, who can always comment
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
 });

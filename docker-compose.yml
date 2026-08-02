@@ -1,0 +1,13 @@
+services:
+  planka-mcp:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      PLANKA_BASE_URL: ${PLANKA_BASE_URL}
+      PLANKA_API_KEY: ${PLANKA_API_KEY}
+      PLANKA_AGENT_EMAIL: ${PLANKA_AGENT_EMAIL:-}
+      PLANKA_AGENT_PASSWORD: ${PLANKA_AGENT_PASSWORD:-}
+      PLANKA_ALLOW_DESTRUCTION: ${PLANKA_ALLOW_DESTRUCTION:-false}
+      MCP_AUTH_TOKEN: ${MCP_AUTH_TOKEN}
+    restart: unless-stopped
