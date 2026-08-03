@@ -89,11 +89,18 @@ export const createCardTool = defineTool("modify", {
         dueDate: params.dueDate,
       });
 
+      let tasksCreated = 0;
+      let taskError: string | undefined;
       if (params.tasks && params.tasks.length > 0) {
-        await createTasks({
-          cardId: card.id,
-          tasks: params.tasks.map((name) => ({ name })),
-        });
+        try {
+          const tasks = await createTasks({
+            cardId: card.id,
+            tasks: params.tasks.map((name) => ({ name })),
+          });
+          tasksCreated = tasks.length;
+        } catch (error) {
+          taskError = error instanceof Error ? error.message : String(error);
+        }
       }
 
       let labelsAttached = 0;
@@ -123,8 +130,9 @@ export const createCardTool = defineTool("modify", {
                   type: card.type,
                   position: card.position,
                 },
-                tasksCreated: params.tasks?.length || 0,
+                tasksCreated,
                 labelsAttached,
+                ...(taskError && { taskError }),
                 ...(labelErrors.length > 0 && { labelErrors }),
               },
               null,
