@@ -5,6 +5,7 @@ import { plankaClient } from "../client.js";
 import { CardMembership } from "../schemas/entities.js";
 import { AddCardMemberSchema, AddCardMemberInput } from "../schemas/requests.js";
 import { CardMembershipResponse } from "../schemas/responses.js";
+import { isAlreadyExistsError } from "../lib/already-exists.js";
 import { getCard } from "./cards.js";
 
 /**
@@ -65,8 +66,7 @@ export async function setCardMembers(
       try {
         await addCardMember({ cardId, userId });
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        if (!message.toLowerCase().includes("already")) {
+        if (!isAlreadyExistsError(error)) {
           throw error;
         }
       }

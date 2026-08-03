@@ -12,6 +12,7 @@ import {
   AddLabelToCardInput,
 } from "../schemas/requests.js";
 import { LabelResponse, CardLabelResponse } from "../schemas/responses.js";
+import { isAlreadyExistsError } from "../lib/already-exists.js";
 
 /**
  * Create a new label on a board.
@@ -109,9 +110,7 @@ export async function setCardLabels(
       try {
         await addLabelToCard({ cardId, labelId });
       } catch (error) {
-        // Ignore if label already on card
-        const message = error instanceof Error ? error.message : String(error);
-        if (!message.includes("already")) {
+        if (!isAlreadyExistsError(error)) {
           throw error;
         }
       }

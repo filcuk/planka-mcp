@@ -10,6 +10,7 @@ import {
 } from "../operations/labels.js";
 import { LabelColorSchema } from "../schemas/entities.js";
 import { PlankaError } from "../errors.js";
+import { isAlreadyExistsError } from "../lib/already-exists.js";
 import { defineTool } from "./types.js";
 
 const validColors = LabelColorSchema.options.join(", ");
@@ -258,8 +259,7 @@ export const addCardLabelsTool = defineTool("modify", {
           await addLabelToCard({ cardId: params.cardId, labelId });
           added++;
         } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          if (!message.includes("already")) {
+          if (!isAlreadyExistsError(error)) {
             throw error;
           }
         }
@@ -307,13 +307,23 @@ export const removeCardLabelsTool = defineTool("delete", {
   },
   handler: async (params: { cardId: string; labelIds: string[] }) => {
     try {
+      let removed = 0;
+      const failures: Array<{ labelId: string; error: string }> = [];
+
       for (const labelId of params.labelIds) {
         try {
           await removeLabelFromCard(params.cardId, labelId);
-        } catch {
-          // Ignore if label not on card
+          removed++;
+        } catch (error) {
+          failures.push({
+            labelId,
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
+
+      const allFailed =
+        params.labelIds.length > 0 && removed === 0 && failures.length > 0;
 
       return {
         content: [
@@ -321,15 +331,17 @@ export const removeCardLabelsTool = defineTool("delete", {
             type: "text" as const,
             text: JSON.stringify(
               {
-                success: true,
+                success: !allFailed,
                 cardId: params.cardId,
-                labelsRemoved: params.labelIds.length,
+                labelsRemoved: removed,
+                ...(failures.length > 0 && { failures }),
               },
               null,
               2
             ),
           },
         ],
+        ...(allFailed && { isError: true }),
       };
     } catch (error) {
       return handleError(error);
