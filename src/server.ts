@@ -11,7 +11,7 @@ import { PlankaError, PlankaConfigError } from "./errors.js";
 import { CONFIG_HELP_TEXT } from "./config/client-config.js";
 
 export const SERVER_NAME = "planka-mcp";
-export const SERVER_VERSION = "1.4.0";
+export const SERVER_VERSION = "1.5.0";
 
 /**
  * Create and configure the PLANKA MCP server with tool handlers.

@@ -225,7 +225,7 @@ npx planka-mcp-http
 | Tool | Description | Default |
 |------|-------------|---------|
 | `planka_add_comment` | Add a comment to a card | On |
-| `planka_get_comments` | Get all comments on a card | On |
+| `planka_get_comments` | Get comments on a card (authors included; optional `beforeId` cursor) | On |
 | `planka_modify_comment` | Update a comment | On |
 | `planka_delete_comment` | Delete a comment | Blocked |
 
@@ -247,7 +247,7 @@ npx planka-mcp-http
 
 | Tool | Description | Default |
 |------|-------------|---------|
-| `planka_get_board_members` | List board users with roles and membership IDs | On |
+| `planka_get_board_members` | List board members with roles and membership IDs | On |
 | `planka_add_card_members` | Add users to a card | On |
 | `planka_modify_board_members` | Add or update board memberships | On |
 | `planka_remove_card_members` | Remove users from a card | Blocked |
