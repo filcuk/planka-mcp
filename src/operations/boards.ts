@@ -103,28 +103,24 @@ export interface BoardMemberInfo {
 }
 
 /**
- * Get board members (users with board access and membership details).
+ * Get board members (users with a board membership).
+ * Iterates boardMemberships — included.users also contains non-members.
  */
 export async function getBoardMembers(
   boardId: string
 ): Promise<BoardMemberInfo[]> {
   const details = await getBoard(boardId);
-  const membershipByUserId = new Map(
-    (details.boardMemberships || []).map((membership) => [
-      membership.userId,
-      membership,
-    ])
-  );
+  const usersById = new Map(details.users.map((user) => [user.id, user]));
 
-  return details.users.map((user) => {
-    const membership = membershipByUserId.get(user.id);
+  return details.boardMemberships.map((membership) => {
+    const user = usersById.get(membership.userId);
     return {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      boardMembershipId: membership?.id ?? "",
-      role: membership?.role ?? "viewer",
-      canComment: membership?.canComment,
+      id: membership.userId,
+      name: user?.name ?? membership.userId,
+      username: user?.username,
+      boardMembershipId: membership.id,
+      role: membership.role,
+      canComment: membership.canComment,
     };
   });
 }

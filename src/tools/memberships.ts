@@ -20,7 +20,7 @@ function handleError(error: unknown) {
 export const getBoardMembersTool = defineTool("read", {
   name: "planka_get_board_members",
   description:
-    "List board members with roles and membership IDs. Use this to find user IDs for assigning people to cards or boards.",
+    "List board members (users with board membership) with roles and membership IDs. Use this to find user IDs for assigning people to cards or boards.",
   inputSchema: {
     type: "object" as const,
     properties: {
