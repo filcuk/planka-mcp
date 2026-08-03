@@ -4,6 +4,7 @@
 import { getBoardMembers } from "../operations/boards.js";
 import { addCardMember, removeCardMember } from "../operations/memberships.js";
 import { PlankaError } from "../errors.js";
+import { isAlreadyExistsError } from "../lib/already-exists.js";
 import { defineTool } from "./types.js";
 
 function handleError(error: unknown) {
@@ -19,7 +20,7 @@ function handleError(error: unknown) {
 export const getBoardMembersTool = defineTool("read", {
   name: "planka_get_board_members",
   description:
-    "List board members with roles and membership IDs. Use this to find user IDs for assigning people to cards or boards.",
+    "List board members (users with board membership) with roles and membership IDs. Use this to find user IDs for assigning people to cards or boards.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -82,8 +83,7 @@ export const addCardMembersTool = defineTool("modify", {
           await addCardMember({ cardId: params.cardId, userId });
           added++;
         } catch (error) {
-          const message = error instanceof Error ? error.message : String(error);
-          if (!message.toLowerCase().includes("already")) {
+          if (!isAlreadyExistsError(error)) {
             throw error;
           }
         }
@@ -131,13 +131,23 @@ export const removeCardMembersTool = defineTool("delete", {
   },
   handler: async (params: { cardId: string; userIds: string[] }) => {
     try {
+      let removed = 0;
+      const failures: Array<{ userId: string; error: string }> = [];
+
       for (const userId of params.userIds) {
         try {
           await removeCardMember(params.cardId, userId);
-        } catch {
-          // Ignore if member not on card
+          removed++;
+        } catch (error) {
+          failures.push({
+            userId,
+            error: error instanceof Error ? error.message : String(error),
+          });
         }
       }
+
+      const allFailed =
+        params.userIds.length > 0 && removed === 0 && failures.length > 0;
 
       return {
         content: [
@@ -145,15 +155,17 @@ export const removeCardMembersTool = defineTool("delete", {
             type: "text" as const,
             text: JSON.stringify(
               {
-                success: true,
+                success: !allFailed,
                 cardId: params.cardId,
-                membersRemoved: params.userIds.length,
+                membersRemoved: removed,
+                ...(failures.length > 0 && { failures }),
               },
               null,
               2
             ),
           },
         ],
+        ...(allFailed && { isError: true }),
       };
     } catch (error) {
       return handleError(error);

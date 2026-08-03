@@ -41,22 +41,17 @@ export const ProjectResponse = SingleItemResponse(ProjectSchema);
 export const ProjectsResponse = MultiItemResponse(ProjectSchema);
 
 export const BoardResponse = SingleItemResponse(BoardSchema);
-export const BoardsResponse = MultiItemResponse(BoardSchema);
 
 export const ListResponse = SingleItemResponse(ListSchema);
-export const ListsResponse = MultiItemResponse(ListSchema);
 
 export const CardResponse = SingleItemResponse(CardSchema);
 export const CardsResponse = MultiItemResponse(CardSchema);
 
 export const TaskListResponse = SingleItemResponse(TaskListSchema);
-export const TaskListsResponse = MultiItemResponse(TaskListSchema);
 
 export const TaskResponse = SingleItemResponse(TaskSchema);
-export const TasksResponse = MultiItemResponse(TaskSchema);
 
 export const LabelResponse = SingleItemResponse(LabelSchema);
-export const LabelsResponse = MultiItemResponse(LabelSchema);
 
 export const CommentResponse = SingleItemResponse(CommentSchema);
 export const CommentsResponse = MultiItemResponse(CommentSchema);
@@ -74,7 +69,6 @@ export const CustomFieldValueResponse = SingleItemResponse(
   CustomFieldValueSchema
 );
 
-export const ActionResponse = SingleItemResponse(ActionSchema);
 export const ActionsResponse = MultiItemResponse(ActionSchema);
 
 // Auth response
@@ -101,12 +95,12 @@ export const BoardIncludedSchema = z
   })
   .passthrough();
 
-// Included entities schema for card details
+// Included entities schema for card details.
+// Comments are not included on GET /api/cards/:id — use GET /api/cards/:id/comments.
 export const CardIncludedSchema = z
   .object({
     taskLists: z.array(TaskListSchema).optional(),
     tasks: z.array(TaskSchema).optional(),
-    comments: z.array(CommentSchema).optional(),
     labels: z.array(LabelSchema).optional(),
     cardLabels: z.array(CardLabelSchema).optional(),
     cardMemberships: z.array(CardMembershipSchema).optional(),

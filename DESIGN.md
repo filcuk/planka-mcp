@@ -101,6 +101,7 @@ All subsequent requests include `Authorization: Bearer <token>`.
 | GET | `/boards/:id` | Get board with lists, cards, labels |
 | POST | `/lists/:listId/cards` | Create card |
 | GET | `/cards/:id` | Get card details |
+| GET | `/cards/:cardId/comments` | Get card comments (paginated) |
 | PATCH | `/cards/:id` | Update card |
 | DELETE | `/cards/:id` | Delete card |
 | POST | `/cards/:cardId/tasks` | Create task |
@@ -1010,6 +1011,7 @@ PLANKA uses numeric positions for ordering. Convention:
 2. **Label endpoints changed**: Use `/card-labels` not `/labels` for card-label operations
 3. **Optional fields may be absent**: Use `.optional()` in schemas for fields that might not exist
 4. **Archive lists have null names**: Handle `name: null` gracefully
+5. **Card/list responses omit comments and labels**: `GET /cards/:id` and `GET /lists/:listId/cards` do not include `comments` or `labels` in `included`. Fetch comments via `GET /cards/:cardId/comments` and label metadata via `GET /boards/:id`.
 
 ---
 

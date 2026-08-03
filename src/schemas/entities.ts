@@ -4,6 +4,13 @@
  */
 import { z } from "zod";
 
+/**
+ * Accept a known enum value or any string, so future PLANKA values do not fail the whole parse.
+ * Request schemas keep strict enums for agent input validation.
+ */
+const looseEnum = <T extends [string, ...string[]]>(schema: z.ZodEnum<T>) =>
+  z.union([schema, z.string()]);
+
 // Card type enum - required for PLANKA 2.0
 export const CardTypeSchema = z.enum(["project", "story"]);
 export type CardType = z.infer<typeof CardTypeSchema>;
@@ -112,10 +119,13 @@ export type Board = z.infer<typeof BoardSchema>;
 export const ListSchema = z.object({
   id: z.string(),
   boardId: z.string(),
-  type: ListTypeSchema,
+  type: looseEnum(ListTypeSchema),
   name: z.string().nullable(), // Can be null for archive/trash
   position: z.number().nullable(),
-  color: z.union([ListColorSchema, LabelColorSchema]).nullable().optional(),
+  color: z
+    .union([ListColorSchema, LabelColorSchema, z.string()])
+    .nullable()
+    .optional(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
 });
@@ -137,7 +147,7 @@ export const CardSchema = z.object({
   name: z.string(),
   description: z.string().nullable().optional(),
   position: z.number(),
-  type: CardTypeSchema,
+  type: looseEnum(CardTypeSchema),
   dueDate: z.string().nullable().optional(),
   isDueCompleted: z.boolean().nullable().optional(),
   isClosed: z.boolean().optional(),
@@ -182,7 +192,7 @@ export const LabelSchema = z.object({
   id: z.string(),
   boardId: z.string(),
   name: z.string().nullable(),
-  color: LabelColorSchema,
+  color: looseEnum(LabelColorSchema),
   position: z.number(),
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
@@ -199,13 +209,13 @@ export const CardLabelSchema = z.object({
 });
 export type CardLabel = z.infer<typeof CardLabelSchema>;
 
-// Comment schema
+// Comment schema — userId/createdAt may be null (e.g. deleted user)
 export const CommentSchema = z.object({
   id: z.string(),
   cardId: z.string(),
-  userId: z.string(),
+  userId: z.string().nullable(),
   text: z.string(),
-  createdAt: z.string(),
+  createdAt: z.string().nullable(),
   updatedAt: z.string().nullable().optional(),
 });
 export type Comment = z.infer<typeof CommentSchema>;
@@ -228,10 +238,10 @@ export const NotificationSchema = z.object({
   cardId: z.string(),
   commentId: z.string().nullable().optional(),
   actionId: z.string().nullable().optional(),
-  type: NotificationTypeSchema,
+  type: looseEnum(NotificationTypeSchema),
   data: z.record(z.unknown()),
   isRead: z.boolean(),
-  createdAt: z.string(),
+  createdAt: z.string().nullable(),
   updatedAt: z.string().nullable().optional(),
 });
 export type Notification = z.infer<typeof NotificationSchema>;
@@ -244,7 +254,7 @@ export const AttachmentSchema = z.object({
   id: z.string(),
   cardId: z.string(),
   creatorUserId: z.string().nullable().optional(),
-  type: AttachmentTypeSchema,
+  type: looseEnum(AttachmentTypeSchema),
   data: z.record(z.unknown()),
   name: z.string(),
   createdAt: z.string(),
@@ -260,7 +270,7 @@ export const BoardMembershipSchema = z.object({
   id: z.string(),
   boardId: z.string(),
   userId: z.string(),
-  role: BoardRoleSchema,
+  role: looseEnum(BoardRoleSchema),
   canComment: z.boolean().nullable().optional(), // Null for editors, who can always comment
   createdAt: z.string(),
   updatedAt: z.string().nullable().optional(),
@@ -329,9 +339,9 @@ export const ActionSchema = z.object({
   boardId: z.string().nullable().optional(),
   cardId: z.string(),
   userId: z.string().nullable().optional(),
-  type: ActionTypeSchema,
+  type: looseEnum(ActionTypeSchema),
   data: z.record(z.unknown()),
-  createdAt: z.string(),
+  createdAt: z.string().nullable(),
   updatedAt: z.string().nullable().optional(),
 });
 export type Action = z.infer<typeof ActionSchema>;

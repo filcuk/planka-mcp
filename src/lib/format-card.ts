@@ -1,12 +1,13 @@
 /**
  * Shared formatters for card tool output.
  */
-import { CardDetails } from "../operations/cards.js";
+import { CardDetails, CardView } from "../operations/cards.js";
 import { getAttachmentUrl } from "./attachments.js";
 import { formatCustomFields } from "./custom-fields.js";
 
-export function formatCardDetails(details: CardDetails) {
+export function formatCardDetails(details: CardDetails | CardView) {
   const usersById = new Map(details.users.map((user) => [user.id, user]));
+  const comments = "comments" in details ? details.comments : [];
 
   return {
     card: {
@@ -42,17 +43,19 @@ export function formatCardDetails(details: CardDetails) {
           assigneeUserId: task.assigneeUserId,
         })),
     })),
-    comments: details.comments.map((comment) => ({
+    comments: comments.map((comment) => ({
       id: comment.id,
       text: comment.text,
       createdAt: comment.createdAt,
+      updatedAt: comment.updatedAt,
+      author: comment.author,
     })),
     labels: details.cardLabels.map((cardLabel) => {
       const label = details.labels.find((l) => l.id === cardLabel.labelId);
       return {
         id: cardLabel.labelId,
-        name: label?.name,
-        color: label?.color,
+        name: label?.name ?? null,
+        color: label?.color ?? null,
       };
     }),
     attachments: details.attachments.map((attachment) => ({

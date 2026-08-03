@@ -87,34 +87,3 @@ export async function removeLabelFromCard(
     `/api/cards/${cardId}/card-labels/labelId:${labelId}`
   );
 }
-
-/**
- * Set labels on a card (add some, remove others).
- */
-export async function setCardLabels(
-  cardId: string,
-  addLabelIds?: string[],
-  removeLabelIds?: string[]
-): Promise<void> {
-  // Remove labels first
-  if (removeLabelIds && removeLabelIds.length > 0) {
-    for (const labelId of removeLabelIds) {
-      await removeLabelFromCard(cardId, labelId);
-    }
-  }
-
-  // Add labels
-  if (addLabelIds && addLabelIds.length > 0) {
-    for (const labelId of addLabelIds) {
-      try {
-        await addLabelToCard({ cardId, labelId });
-      } catch (error) {
-        // Ignore if label already on card
-        const message = error instanceof Error ? error.message : String(error);
-        if (!message.includes("already")) {
-          throw error;
-        }
-      }
-    }
-  }
-}

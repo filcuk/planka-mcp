@@ -6,6 +6,16 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { createPlankaServer } from "./server.js";
 import { validateBearerToken } from "./http-auth.js";
 
+/** Cap JSON MCP request bodies (allows base64 file uploads up to the default attachment limit). */
+export const MAX_JSON_BODY_BYTES = 32 * 1024 * 1024;
+
+export class BodyTooLargeError extends Error {
+  constructor() {
+    super("Request body too large");
+    this.name = "BodyTooLargeError";
+  }
+}
+
 export interface HttpServerConfig {
   host: string;
   port: number;
@@ -49,8 +59,16 @@ export function loadHttpServerConfig(
 
 async function readJsonBody(req: IncomingMessage): Promise<unknown> {
   const chunks: Buffer[] = [];
+  let total = 0;
+
   for await (const chunk of req) {
-    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+    const buf = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk);
+    total += buf.length;
+    if (total > MAX_JSON_BODY_BYTES) {
+      req.destroy();
+      throw new BodyTooLargeError();
+    }
+    chunks.push(buf);
   }
 
   if (chunks.length === 0) {
@@ -98,7 +116,11 @@ async function handleMcpRequest(
   let parsedBody: unknown;
   try {
     parsedBody = await readJsonBody(req);
-  } catch {
+  } catch (error) {
+    if (error instanceof BodyTooLargeError) {
+      sendText(res, 413, "Request body too large");
+      return;
+    }
     sendJson(res, 400, {
       jsonrpc: "2.0",
       error: { code: -32700, message: "Parse error" },

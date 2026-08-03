@@ -76,6 +76,8 @@ Never weaken these defaults, never make a destructive call from a `read` or `mod
 
 PLANKA returns `null` (not `undefined`) for many optional columns, and the API is not fully described by its Swagger document. When a field can be absent or null, use `.nullable().optional()`; a wrong assumption here breaks the whole tool call, since one bad field fails the entire parse.
 
+`GET /api/cards/:id` and `GET /api/lists/:listId/cards` do **not** include `comments` or `labels` in `included`. Comments come from `GET /api/cards/:id/comments`. Label names/colors come from `GET /api/boards/:id`. Do not assume card/list payloads contain those collections.
+
 Reference: [PLANKA Swagger](https://plankanban.github.io/planka/swagger-ui/swagger.json). When behaviour disagrees with the docs, trust the live API and add a short comment on the schema field explaining the observed shape.
 
 ## Tests

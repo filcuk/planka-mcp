@@ -10,10 +10,21 @@ import {
 } from "../operations/attachments.js";
 import { getAttachmentUrl } from "../lib/attachments.js";
 import { PlankaError } from "../errors.js";
-import { getMaxAttachmentMb } from "../config/attachment-config.js";
+import {
+  DEFAULT_MAX_ATTACHMENT_MB,
+  getMaxAttachmentMb,
+} from "../config/attachment-config.js";
 import { defineTool } from "./types.js";
 
-const maxAttachmentMb = getMaxAttachmentMb();
+function resolveMaxAttachmentMbForDescription(): number {
+  try {
+    return getMaxAttachmentMb();
+  } catch {
+    return DEFAULT_MAX_ATTACHMENT_MB;
+  }
+}
+
+const maxAttachmentMb = resolveMaxAttachmentMbForDescription();
 
 function handleError(error: unknown) {
   if (error instanceof PlankaError) {

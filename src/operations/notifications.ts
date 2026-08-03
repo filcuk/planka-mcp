@@ -47,7 +47,7 @@ export async function getNotifications(
   });
 
   if (options.types && options.types.length > 0) {
-    const allowedTypes = new Set(options.types);
+    const allowedTypes = new Set<string>(options.types);
     notifications = notifications.filter((notification) =>
       allowedTypes.has(notification.type)
     );

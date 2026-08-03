@@ -1,11 +1,21 @@
 /**
  * Bearer token authentication for the HTTP MCP transport.
  */
+import { timingSafeEqual } from "node:crypto";
 import type { IncomingMessage } from "node:http";
 
 export type BearerAuthResult =
   | { ok: true }
   | { ok: false; status: number; message: string };
+
+function tokensEqual(actual: string, expected: string): boolean {
+  const actualBuf = Buffer.from(actual);
+  const expectedBuf = Buffer.from(expected);
+  if (actualBuf.length !== expectedBuf.length) {
+    return false;
+  }
+  return timingSafeEqual(actualBuf, expectedBuf);
+}
 
 /**
  * Validate the Authorization header against the expected bearer token.
@@ -29,7 +39,7 @@ export function validateBearerToken(
   }
 
   const token = match[1];
-  if (token !== expectedToken) {
+  if (!tokensEqual(token, expectedToken)) {
     return { ok: false, status: 401, message: "Invalid bearer token" };
   }
 

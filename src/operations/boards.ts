@@ -82,6 +82,15 @@ export async function getBoard(boardId: string): Promise<BoardDetails> {
 }
 
 /**
+ * Get labels defined on a board.
+ * Label metadata is only available via GET /api/boards/:id, not card endpoints.
+ */
+export async function getBoardLabels(boardId: string): Promise<Label[]> {
+  const details = await getBoard(boardId);
+  return details.labels;
+}
+
+/**
  * Board member with membership metadata.
  */
 export interface BoardMemberInfo {
@@ -89,33 +98,29 @@ export interface BoardMemberInfo {
   name: string;
   username?: string;
   boardMembershipId: string;
-  role: "editor" | "viewer";
+  role: string;
   canComment?: boolean | null;
 }
 
 /**
- * Get board members (users with board access and membership details).
+ * Get board members (users with a board membership).
+ * Iterates boardMemberships — included.users also contains non-members.
  */
 export async function getBoardMembers(
   boardId: string
 ): Promise<BoardMemberInfo[]> {
   const details = await getBoard(boardId);
-  const membershipByUserId = new Map(
-    (details.boardMemberships || []).map((membership) => [
-      membership.userId,
-      membership,
-    ])
-  );
+  const usersById = new Map(details.users.map((user) => [user.id, user]));
 
-  return details.users.map((user) => {
-    const membership = membershipByUserId.get(user.id);
+  return details.boardMemberships.map((membership) => {
+    const user = usersById.get(membership.userId);
     return {
-      id: user.id,
-      name: user.name,
-      username: user.username,
-      boardMembershipId: membership?.id ?? "",
-      role: membership?.role ?? "viewer",
-      canComment: membership?.canComment,
+      id: membership.userId,
+      name: user?.name ?? membership.userId,
+      username: user?.username,
+      boardMembershipId: membership.id,
+      role: membership.role,
+      canComment: membership.canComment,
     };
   });
 }
@@ -229,17 +234,4 @@ export async function updateBoard(
  */
 export async function deleteBoard(boardId: string): Promise<void> {
   await plankaClient.delete(`/api/boards/${boardId}`);
-}
-
-/**
- * Get cards for a specific list on a board.
- */
-export async function getCardsForList(
-  boardId: string,
-  listId: string
-): Promise<Card[]> {
-  const details = await getBoard(boardId);
-  return details.cards
-    .filter((card) => card.listId === listId)
-    .sort((a, b) => a.position - b.position);
 }
