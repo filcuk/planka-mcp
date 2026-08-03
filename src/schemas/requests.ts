@@ -157,6 +157,44 @@ export type CreateLinkAttachmentInput = z.input<typeof CreateLinkAttachmentSchem
 
 import { getMaxAttachmentBytes, getMaxAttachmentMb } from "../config/attachment-config.js";
 
+/**
+ * Validate base64 without a regex (large payloads can stack-overflow nested quantifiers).
+ */
+function isValidBase64(value: string): boolean {
+  const normalized = value.replace(/\s/g, "");
+  if (normalized.length === 0 || normalized.length % 4 !== 0) {
+    return false;
+  }
+
+  for (let i = 0; i < normalized.length; i++) {
+    const code = normalized.charCodeAt(i);
+    const isAlpha =
+      (code >= 65 && code <= 90) ||
+      (code >= 97 && code <= 122) ||
+      (code >= 48 && code <= 57) ||
+      code === 43 ||
+      code === 47;
+    if (isAlpha) {
+      continue;
+    }
+    if (code === 61) {
+      const remaining = normalized.length - i;
+      if (remaining > 2) {
+        return false;
+      }
+      for (let j = i; j < normalized.length; j++) {
+        if (normalized.charCodeAt(j) !== 61) {
+          return false;
+        }
+      }
+      return true;
+    }
+    return false;
+  }
+
+  return true;
+}
+
 export const CreateFileAttachmentSchema = z.object({
   cardId: z.string(),
   name: z.string().min(1, "Attachment name required"),
@@ -164,10 +202,8 @@ export const CreateFileAttachmentSchema = z.object({
     .string()
     .min(1, "fileBase64 required")
     .superRefine((value, ctx) => {
-      let byteLength: number;
-      try {
-        byteLength = Buffer.from(value, "base64").length;
-      } catch {
+      const normalized = value.replace(/\s/g, "");
+      if (!isValidBase64(normalized)) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Invalid base64 file content",
@@ -175,6 +211,7 @@ export const CreateFileAttachmentSchema = z.object({
         return;
       }
 
+      const byteLength = Buffer.from(normalized, "base64").length;
       const maxBytes = getMaxAttachmentBytes();
       if (byteLength > maxBytes) {
         ctx.addIssue({

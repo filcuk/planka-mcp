@@ -222,6 +222,16 @@ describe("CreateFileAttachmentSchema", () => {
       })
     ).toThrow(/5 MB/);
   });
+
+  it("rejects invalid base64 content", () => {
+    expect(() =>
+      CreateFileAttachmentSchema.parse({
+        cardId: "card-1",
+        name: "bad.bin",
+        fileBase64: "not!!valid@@base64",
+      })
+    ).toThrow(/Invalid base64/);
+  });
 });
 
 describe("decodeBase64ToBlob", () => {
