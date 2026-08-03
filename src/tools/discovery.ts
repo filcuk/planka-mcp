@@ -179,14 +179,17 @@ export const searchCardsTool = defineTool("read", {
                 listId: params.listId,
                 matchCount: results.length,
                 ...(nextCursor && { nextCursor }),
-                cards: results.map((details) => ({
-                  id: details.card.id,
-                  name: details.card.name,
-                  listId: details.card.listId,
-                  listChangedAt: details.card.listChangedAt,
-                  labels: formatCardDetails(details).labels,
-                  members: formatCardDetails(details).members,
-                })),
+                cards: results.map((details) => {
+                  const formatted = formatCardDetails(details);
+                  return {
+                    id: details.card.id,
+                    name: details.card.name,
+                    listId: details.card.listId,
+                    listChangedAt: details.card.listChangedAt,
+                    labels: formatted.labels,
+                    members: formatted.members,
+                  };
+                }),
               },
               null,
               2

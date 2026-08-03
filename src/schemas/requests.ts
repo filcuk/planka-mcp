@@ -48,13 +48,6 @@ export const MoveCardSchema = z.object({
 export type MoveCardInput = z.input<typeof MoveCardSchema>;
 
 // Task requests
-export const CreateTaskSchema = z.object({
-  cardId: z.string(),
-  name: z.string().min(1, "Task name required"),
-  position: z.number().optional().default(65536),
-});
-export type CreateTaskInput = z.input<typeof CreateTaskSchema>;
-
 export const UpdateTaskSchema = z.object({
   name: z.string().min(1).optional(),
   isCompleted: z.boolean().optional(),
@@ -111,12 +104,6 @@ export const AddLabelToCardSchema = z.object({
   labelId: z.string(),
 });
 export type AddLabelToCardInput = z.input<typeof AddLabelToCardSchema>;
-
-export const RemoveLabelFromCardSchema = z.object({
-  cardId: z.string(),
-  labelId: z.string(),
-});
-export type RemoveLabelFromCardInput = z.input<typeof RemoveLabelFromCardSchema>;
 
 // Comment requests
 export const CreateCommentSchema = z.object({

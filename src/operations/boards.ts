@@ -235,16 +235,3 @@ export async function updateBoard(
 export async function deleteBoard(boardId: string): Promise<void> {
   await plankaClient.delete(`/api/boards/${boardId}`);
 }
-
-/**
- * Get cards for a specific list on a board.
- */
-export async function getCardsForList(
-  boardId: string,
-  listId: string
-): Promise<Card[]> {
-  const details = await getBoard(boardId);
-  return details.cards
-    .filter((card) => card.listId === listId)
-    .sort((a, b) => a.position - b.position);
-}

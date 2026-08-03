@@ -8,11 +8,9 @@
 import { plankaClient } from "../client.js";
 import { Task, TaskList } from "../schemas/entities.js";
 import {
-  CreateTaskSchema,
   UpdateTaskSchema,
   BatchCreateTasksSchema,
   UpdateTaskListSchema,
-  CreateTaskInput,
   UpdateTaskInput,
   BatchCreateTasksInput,
   UpdateTaskListInput,
@@ -66,28 +64,6 @@ export async function createTaskList(
   );
 
   const parsed = TaskListResponse.parse(response);
-  return parsed.item;
-}
-
-/**
- * Create a single task on a card.
- * Automatically creates a default task-list if the card doesn't have one.
- */
-export async function createTask(input: CreateTaskInput): Promise<Task> {
-  const validated = CreateTaskSchema.parse(input);
-
-  // Get or create a task-list for this card
-  const taskList = await getOrCreateDefaultTaskList(validated.cardId);
-
-  const response = await plankaClient.post<unknown>(
-    `/api/task-lists/${taskList.id}/tasks`,
-    {
-      name: validated.name,
-      position: validated.position,
-    }
-  );
-
-  const parsed = TaskResponse.parse(response);
   return parsed.item;
 }
 

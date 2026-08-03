@@ -41,22 +41,17 @@ export const ProjectResponse = SingleItemResponse(ProjectSchema);
 export const ProjectsResponse = MultiItemResponse(ProjectSchema);
 
 export const BoardResponse = SingleItemResponse(BoardSchema);
-export const BoardsResponse = MultiItemResponse(BoardSchema);
 
 export const ListResponse = SingleItemResponse(ListSchema);
-export const ListsResponse = MultiItemResponse(ListSchema);
 
 export const CardResponse = SingleItemResponse(CardSchema);
 export const CardsResponse = MultiItemResponse(CardSchema);
 
 export const TaskListResponse = SingleItemResponse(TaskListSchema);
-export const TaskListsResponse = MultiItemResponse(TaskListSchema);
 
 export const TaskResponse = SingleItemResponse(TaskSchema);
-export const TasksResponse = MultiItemResponse(TaskSchema);
 
 export const LabelResponse = SingleItemResponse(LabelSchema);
-export const LabelsResponse = MultiItemResponse(LabelSchema);
 
 export const CommentResponse = SingleItemResponse(CommentSchema);
 export const CommentsResponse = MultiItemResponse(CommentSchema);
@@ -74,7 +69,6 @@ export const CustomFieldValueResponse = SingleItemResponse(
   CustomFieldValueSchema
 );
 
-export const ActionResponse = SingleItemResponse(ActionSchema);
 export const ActionsResponse = MultiItemResponse(ActionSchema);
 
 // Auth response
