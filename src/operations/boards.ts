@@ -98,7 +98,7 @@ export interface BoardMemberInfo {
   name: string;
   username?: string;
   boardMembershipId: string;
-  role: "editor" | "viewer";
+  role: string;
   canComment?: boolean | null;
 }
 
