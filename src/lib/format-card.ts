@@ -42,11 +42,6 @@ export function formatCardDetails(details: CardDetails) {
           assigneeUserId: task.assigneeUserId,
         })),
     })),
-    comments: details.comments.map((comment) => ({
-      id: comment.id,
-      text: comment.text,
-      createdAt: comment.createdAt,
-    })),
     labels: details.cardLabels.map((cardLabel) => {
       const label = details.labels.find((l) => l.id === cardLabel.labelId);
       return {

@@ -72,7 +72,8 @@ export const addCommentTool = defineTool("modify", {
 
 export const getCommentsTool = defineTool("read", {
   name: "planka_get_comments",
-  description: "Get all comments on a card.",
+  description:
+    "Get comments on a card. Supports cursor pagination via beforeId.",
   inputSchema: {
     type: "object" as const,
     properties: {
@@ -80,12 +81,16 @@ export const getCommentsTool = defineTool("read", {
         type: "string",
         description: "The card ID",
       },
+      beforeId: {
+        type: "string",
+        description: "Pagination cursor — return comments before this ID",
+      },
     },
     required: ["cardId"],
   },
-  handler: async (params: { cardId: string }) => {
+  handler: async (params: { cardId: string; beforeId?: string }) => {
     try {
-      const comments = await getCommentsForCard(params.cardId);
+      const comments = await getCommentsForCard(params.cardId, params.beforeId);
 
       return {
         content: [
@@ -99,6 +104,8 @@ export const getCommentsTool = defineTool("read", {
                   id: comment.id,
                   text: comment.text,
                   createdAt: comment.createdAt,
+                  updatedAt: comment.updatedAt,
+                  author: comment.author,
                 })),
               },
               null,

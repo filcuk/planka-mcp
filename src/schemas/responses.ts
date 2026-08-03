@@ -101,12 +101,12 @@ export const BoardIncludedSchema = z
   })
   .passthrough();
 
-// Included entities schema for card details
+// Included entities schema for card details.
+// Comments are not included on GET /api/cards/:id — use GET /api/cards/:id/comments.
 export const CardIncludedSchema = z
   .object({
     taskLists: z.array(TaskListSchema).optional(),
     tasks: z.array(TaskSchema).optional(),
-    comments: z.array(CommentSchema).optional(),
     labels: z.array(LabelSchema).optional(),
     cardLabels: z.array(CardLabelSchema).optional(),
     cardMemberships: z.array(CardMembershipSchema).optional(),

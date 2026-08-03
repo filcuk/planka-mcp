@@ -6,7 +6,6 @@ import {
   Card,
   TaskList,
   Task,
-  Comment,
   Label,
   CardLabel,
   Attachment,
@@ -30,12 +29,12 @@ import { CardResponse, CardsResponse, CardIncludedSchema } from "../schemas/resp
 
 /**
  * Card details with all related entities.
+ * Comments are not included here — use getCommentsForCard (GET /api/cards/:id/comments).
  */
 export interface CardDetails {
   card: Card;
   taskLists: TaskList[];
   tasks: Task[];
-  comments: Comment[];
   labels: Label[];
   cardLabels: CardLabel[];
   attachments: Attachment[];
@@ -82,9 +81,6 @@ export async function getCard(cardId: string): Promise<CardDetails> {
     card: parsed.item,
     taskLists: (included.taskLists || []).sort((a, b) => a.position - b.position),
     tasks: (included.tasks || []).sort((a, b) => a.position - b.position),
-    comments: (included.comments || []).sort(
-      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    ),
     labels: included.labels || [],
     cardLabels: included.cardLabels || [],
     attachments: included.attachments || [],
@@ -182,7 +178,6 @@ export async function searchCards(input: SearchCardsInput): Promise<CardDetails[
         (tl) => tl.id === task.taskListId && tl.cardId === card.id
       )
     ),
-    comments: [],
     labels: included.labels || [],
     cardLabels: (included.cardLabels || []).filter((cl) => cl.cardId === card.id),
     attachments: (included.attachments || []).filter((a) => a.cardId === card.id),
