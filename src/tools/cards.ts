@@ -3,7 +3,7 @@
  */
 import {
   createCard,
-  getCard,
+  getCardView,
   updateCard,
   moveCard,
   deleteCard,
@@ -155,7 +155,7 @@ export const getCardTool = defineTool("read", {
   },
   handler: async (params: { cardId: string }) => {
     try {
-      const details = await getCard(params.cardId);
+      const details = await getCardView(params.cardId);
 
       return {
         content: [

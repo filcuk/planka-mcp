@@ -82,6 +82,15 @@ export async function getBoard(boardId: string): Promise<BoardDetails> {
 }
 
 /**
+ * Get labels defined on a board.
+ * Label metadata is only available via GET /api/boards/:id, not card endpoints.
+ */
+export async function getBoardLabels(boardId: string): Promise<Label[]> {
+  const details = await getBoard(boardId);
+  return details.labels;
+}
+
+/**
  * Board member with membership metadata.
  */
 export interface BoardMemberInfo {

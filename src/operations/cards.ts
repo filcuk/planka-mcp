@@ -26,10 +26,12 @@ import {
   SearchCardsInput,
 } from "../schemas/requests.js";
 import { CardResponse, CardsResponse, CardIncludedSchema } from "../schemas/responses.js";
+import { getBoardLabels } from "./boards.js";
+import { CommentWithAuthor, getCommentsForCard } from "./comments.js";
 
 /**
  * Card details with all related entities.
- * Comments are not included here — use getCommentsForCard (GET /api/cards/:id/comments).
+ * Comments are not included here — use getCommentsForCard / getCardView.
  */
 export interface CardDetails {
   card: Card;
@@ -43,6 +45,13 @@ export interface CardDetails {
   customFieldGroups: CustomFieldGroup[];
   customFields: CustomField[];
   customFieldValues: CustomFieldValue[];
+}
+
+/**
+ * Enriched card view for display tools (includes comments and board labels).
+ */
+export interface CardView extends CardDetails {
+  comments: CommentWithAuthor[];
 }
 
 /**
@@ -68,7 +77,8 @@ export async function createCard(input: CreateCardInput): Promise<Card> {
 }
 
 /**
- * Get a card by ID with all related entities.
+ * Get a card by ID with related entities from the card endpoint.
+ * Does not include comments or board label metadata — use getCardView for display.
  */
 export async function getCard(cardId: string): Promise<CardDetails> {
   const response = await plankaClient.get<unknown>(`/api/cards/${cardId}`);
@@ -89,6 +99,23 @@ export async function getCard(cardId: string): Promise<CardDetails> {
     customFieldGroups: included.customFieldGroups || [],
     customFields: included.customFields || [],
     customFieldValues: included.customFieldValues || [],
+  };
+}
+
+/**
+ * Get a card with comments and board label metadata for display tools.
+ */
+export async function getCardView(cardId: string): Promise<CardView> {
+  const [details, comments] = await Promise.all([
+    getCard(cardId),
+    getCommentsForCard(cardId),
+  ]);
+  const labels = await getBoardLabels(details.card.boardId);
+
+  return {
+    ...details,
+    labels,
+    comments,
   };
 }
 
@@ -143,6 +170,7 @@ export async function deleteCard(cardId: string): Promise<void> {
 
 /**
  * Search cards in a list with optional filters.
+ * Fetches board labels once so label names/colors resolve in the result.
  */
 export async function searchCards(input: SearchCardsInput): Promise<CardDetails[]> {
   const validated = SearchCardsSchema.parse(input);
@@ -170,6 +198,9 @@ export async function searchCards(input: SearchCardsInput): Promise<CardDetails[
     (response as Record<string, unknown>).included || {}
   );
 
+  const boardId = parsed.items[0]?.boardId;
+  const boardLabels = boardId ? await getBoardLabels(boardId) : [];
+
   return parsed.items.map((card) => ({
     card,
     taskLists: (included.taskLists || []).filter((tl) => tl.cardId === card.id),
@@ -178,7 +209,7 @@ export async function searchCards(input: SearchCardsInput): Promise<CardDetails[
         (tl) => tl.id === task.taskListId && tl.cardId === card.id
       )
     ),
-    labels: included.labels || [],
+    labels: boardLabels,
     cardLabels: (included.cardLabels || []).filter((cl) => cl.cardId === card.id),
     attachments: (included.attachments || []).filter((a) => a.cardId === card.id),
     cardMemberships: (included.cardMemberships || []).filter(
